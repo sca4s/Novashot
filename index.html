@@ -1269,6 +1269,17 @@
               <span>⚡ <strong id="ammo-count" class="text-amber-500">40</strong></span>
               <span>🎯 <strong id="kills-count" class="text-sky-500">0</strong></span>
             </div>
+
+            <!-- Exclusive Fixed Swivel Mode Reload & Core Stability Bar -->
+            <div id="swivel-core-bar-wrap" class="hidden mt-2 pt-2 border-t border-white/30 flex-col gap-1">
+              <div class="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
+                <span class="text-sky-400 flex items-center gap-1">🔄 Swivel Core (R)</span>
+                <span id="swivel-core-timer-txt" class="text-emerald-400 tabular-nums">15.0s</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-500/30 overflow-hidden p-0.5">
+                <div id="swivel-core-fill" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400 transition-all duration-100" style="width: 100%;"></div>
+              </div>
+            </div>
           </div>
 
           <div id="lr-spacer-middle" class="lr-flex-spacer" style="flex-grow: 1; min-width: 10px;"></div>
@@ -1356,6 +1367,11 @@
           </div>
 
           <div class="flex items-end gap-2.5 sm:gap-3.5 shrink-0">
+            <button id="touch-reload-btn" type="button" class="touch-btn transition-zone hidden w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex-col items-center justify-center border-emerald-400/80">
+              <span class="text-lg sm:text-xl leading-none">🔄</span>
+              <span id="touch-reload-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Reload</span>
+            </button>
+
             <button id="touch-magnify-btn" type="button" class="touch-btn transition-zone w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex flex-col items-center justify-center">
               <span class="text-lg sm:text-xl leading-none">🔍</span>
               <span id="touch-magnify-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Zoom</span>
@@ -1408,6 +1424,10 @@
           <button id="desk-m-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
             <span class="kbd-badge">M</span>
             <span>Zoom: <strong id="desk-zoom-ui" class="text-sky-400">OFF</strong></span>
+          </button>
+          <button id="desk-r-btn" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">R</span>
+            <span>Reload & ♥: <strong id="desk-reload-ui" class="text-emerald-400">15.0s</strong></span>
           </button>
           <button id="desk-p-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
             <span class="kbd-badge">P</span>
@@ -1764,6 +1784,10 @@
       aimYaw: 0, // Player rotation yaw in radians (used in Fixed Swivel mode up to +-85 deg / ~170-180 deg arc)
       fixedCamInvokePos: new THREE.Vector3(0, 4.6, PLAYER_Z + 5.2),
       fixedPlayerInvokeX: 0,
+      swivelCoreTimer: 15.0,
+      swivelCoreMax: 15.0,
+      swivelWarned: false,
+      lastReloadTime: 0,
       health: 6,
       ammo: 40,
       fruitsEaten: 0,
@@ -2715,9 +2739,20 @@
       const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })); leaf.position.set(0.12, 1.65, 0); leaf.rotation.z = -0.4;
       const aura = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 12, 32), new THREE.MeshBasicMaterial({ color: 0xffd6a5 })); aura.rotation.x = Math.PI / 2; aura.position.y = 0.2;
       fruitGroup.add(berry, leaf, aura);
-      let spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
-      if (Math.abs(spawnX - player.position.x) < 3.5) spawnX = -spawnX;
-      fruitGroup.position.set(spawnX, 0, PLAYER_Z);
+
+      const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
+      if (isSwivel) {
+        // In Fixed Swivel mode, spawn fruit in a close forward arc near the player so they can shoot it or absorb it via Reload (R)
+        const angleSpread = (Math.random() - 0.5) * 1.15;
+        const dist = 7.5 + Math.random() * 5.5;
+        const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
+        const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
+        fruitGroup.position.set(spawnX, 0.35, spawnZ);
+      } else {
+        let spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
+        if (Math.abs(spawnX - player.position.x) < 3.5) spawnX = -spawnX;
+        fruitGroup.position.set(spawnX, 0, PLAYER_Z);
+      }
       scene.add(fruitGroup); pickups.push({ mesh: fruitGroup, kind: 'fruit' });
     }
 
@@ -2726,8 +2761,19 @@
       const core = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.1, 20), new THREE.MeshStandardMaterial({ color: 0xfdffb6, roughness: 0.2, metalness: 0.3 })); core.position.y = 0.95;
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.07, 12, 28), new THREE.MeshBasicMaterial({ color: 0x9bf6ff })); ring.position.y = 0.95;
       ammoGroup.add(core, ring);
-      const spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
-      ammoGroup.position.set(spawnX, 0, PLAYER_Z);
+
+      const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
+      if (isSwivel) {
+        // In Fixed Swivel mode, spawn ammo capsule in a close forward arc near the player
+        const angleSpread = (Math.random() - 0.5) * 1.2;
+        const dist = 8.0 + Math.random() * 6.0;
+        const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
+        const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
+        ammoGroup.position.set(spawnX, 0.35, spawnZ);
+      } else {
+        const spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
+        ammoGroup.position.set(spawnX, 0, PLAYER_Z);
+      }
       scene.add(ammoGroup); pickups.push({ mesh: ammoGroup, kind: 'ammo' });
     }
 
@@ -2969,20 +3015,121 @@
           player.position.z + 4.8
         );
         state.aimYaw = player.rotation.y;
+        state.swivelCoreTimer = state.swivelCoreMax;
+        state.swivelWarned = false;
       } else {
         state.aimYaw = 0;
         player.rotation.y = 0;
       }
+
+      // Toggle visibility of Swivel Core HUD bar and Reload buttons
+      const swivelBar = document.getElementById('swivel-core-bar-wrap');
+      const touchReloadBtn = document.getElementById('touch-reload-btn');
+      const deskRBtn = document.getElementById('desk-r-btn');
+      if (swivelBar) {
+        swivelBar.classList.toggle('hidden', !modeObj.isFixedSwivel);
+        swivelBar.classList.toggle('flex', !!modeObj.isFixedSwivel);
+      }
+      if (touchReloadBtn) {
+        touchReloadBtn.classList.toggle('hidden', !modeObj.isFixedSwivel);
+        touchReloadBtn.classList.toggle('flex', !!modeObj.isFixedSwivel);
+      }
+      if (deskRBtn) {
+        deskRBtn.classList.toggle('hidden', !modeObj.isFixedSwivel);
+        deskRBtn.classList.toggle('flex', !!modeObj.isFixedSwivel);
+      }
+
       document.getElementById('hud-cam-label').textContent = modeName;
       document.getElementById('touch-cam-label').textContent = modeName;
       document.querySelectorAll('.step2-cam-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
       document.querySelectorAll('.pause-cam-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
       sfx.playUI(1.15);
-      showToast(modeObj.isFixedSwivel ? `🎥 ${modeName}: Cam Fixed! Rotate 180° (←/→) & Shoot` : `🎥 Camera: ${modeName}`);
+      showToast(modeObj.isFixedSwivel ? `🎥 ${modeName}: Press R / 🔄 Reload before 15s Core Timer expires!` : `🎥 Camera: ${modeName}`);
     }
     function cycleCameraMode() {
       const nextIdx = (state.cameraModeIndex + 1) % CAMERA_MODES.length;
       setCameraMode(nextIdx);
+    }
+
+    function updateSwivelCoreUI() {
+      const timerTxt = document.getElementById('swivel-core-timer-txt');
+      const fillEl = document.getElementById('swivel-core-fill');
+      const deskReloadUi = document.getElementById('desk-reload-ui');
+      const touchReloadLbl = document.getElementById('touch-reload-label');
+      const touchReloadBtn = document.getElementById('touch-reload-btn');
+
+      const secStr = `${Math.max(0, state.swivelCoreTimer).toFixed(1)}s`;
+      const pct = Math.max(0, Math.min(100, (state.swivelCoreTimer / state.swivelCoreMax) * 100));
+
+      if (timerTxt) {
+        timerTxt.textContent = secStr;
+        timerTxt.className = state.swivelCoreTimer <= 4.5
+          ? 'text-rose-500 font-black animate-pulse tabular-nums'
+          : 'text-emerald-400 tabular-nums';
+      }
+      if (fillEl) {
+        fillEl.style.width = `${pct}%`;
+        fillEl.className = state.swivelCoreTimer <= 4.5
+          ? 'h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-400 transition-all duration-100'
+          : 'h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400 transition-all duration-100';
+      }
+      if (deskReloadUi) deskReloadUi.textContent = secStr;
+      if (touchReloadLbl) touchReloadLbl.textContent = state.swivelCoreTimer <= 4.5 ? secStr : 'Reload';
+      if (touchReloadBtn) {
+        touchReloadBtn.classList.toggle('border-rose-500', state.swivelCoreTimer <= 4.5);
+      }
+    }
+
+    function triggerSwivelReload() {
+      if (!state.gameStarted || state.isPaused || state.isDead || state.isCountingDown) return;
+      const modeObj = CAMERA_MODES[state.cameraModeIndex];
+      if (!modeObj || !modeObj.isFixedSwivel) {
+        showToast('🔄 Manual Core Reload is only needed in Fixed Swivel Cam Mode!');
+        return;
+      }
+
+      const now = performance.now();
+      if (now - state.lastReloadTime < 900) return;
+      state.lastReloadTime = now;
+
+      // Reset Core Overload Timer
+      state.swivelCoreTimer = state.swivelCoreMax;
+      state.swivelWarned = false;
+
+      // Absorb any spawned fruits or ammo capsules in the field & replenish gun + shield
+      let absorbedFruits = 0;
+      let absorbedAmmo = 0;
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const p = pickups[i];
+        if (!p || !p.mesh) continue;
+        if (p.kind === 'fruit') {
+          absorbedFruits++;
+          state.fruitsEaten++;
+          spawnPastelBurst(p.mesh.position, [0xff758f, 0xffafcc, 0x95d5b2], 12);
+        } else {
+          absorbedAmmo++;
+          spawnPastelBurst(p.mesh.position, [0xfdffb6, 0x9bf6ff, 0xffffff], 12);
+        }
+        scene.remove(p.mesh);
+        pickups.splice(i, 1);
+      }
+
+      const ammoAdded = 20 + absorbedAmmo * 15;
+      state.ammo = Math.min(120, state.ammo + ammoAdded);
+
+      const healAmount = Math.max(1, absorbedFruits);
+      const prevHealth = state.health;
+      state.health = Math.min(6, state.health + healAmount);
+      const healed = state.health > prevHealth;
+
+      sfx.playReload();
+      if (healed) sfx.playFruit();
+      spawnPastelBurst(player.position, [0x34d399, 0x38bdf8, 0xfdffb6, 0xff758f], 18);
+
+      updateSwivelCoreUI();
+      recalcScore();
+      updateHUD();
+      showToast(`🔄 Core Reloaded! +${ammoAdded}⚡ Ammo${healed ? ' & +0.5 ♥ Shield Restored!' : ' & 15s Timer Reset!'}`);
     }
 
     function toggleMagnifyEnemy(forceState) {
@@ -3033,20 +3180,23 @@
       recalcScore(); updateHUD();
     }
 
-    function triggerYouDied() {
+    function triggerYouDied(customMessage) {
       state.isDead = true;
       sfx.playGameOver();
       document.getElementById('died-score-val').textContent = state.score;
       document.getElementById('died-best-val').textContent = state.highScore;
       document.getElementById('died-time-val').textContent = formatStopwatch(state.sessionTime);
       document.getElementById('you-died-modal').classList.remove('hidden-modal');
-      showToast('💔 Pastel Shield Depleted — You Died');
+      showToast(customMessage || '💔 Pastel Shield Depleted — You Died');
     }
 
     function respawnGame() {
       document.getElementById('you-died-modal').classList.add('hidden-modal');
       state.isDead = false;
       state.health = 6; state.ammo = 40; state.fruitsEaten = 0; state.bulletsFired = 0; state.enemiesKilled = 0; state.daysSurvived = 1; state.sessionTime = 0; state.score = 0;
+      state.swivelCoreTimer = state.swivelCoreMax;
+      state.swivelWarned = false;
+      updateSwivelCoreUI();
       for (let i = enemies.length - 1; i >= 0; i--) { scene.remove(enemies[i].mesh); enemies.splice(i, 1); }
       state.enemyGraceTimer = 1.0;
       startCircularCountdown(() => { sfx.playUI(1.3); showToast('⚡ Respawned & Grace Shield Active (1s)!'); }, 3);
@@ -3375,8 +3525,10 @@
     document.getElementById('desk-b-btn').addEventListener('click', toggleBiome);
     document.getElementById('desk-c-btn').addEventListener('click', cycleCameraMode);
     document.getElementById('desk-m-btn').addEventListener('click', () => toggleMagnifyEnemy());
+    document.getElementById('desk-r-btn').addEventListener('click', () => triggerSwivelReload());
     document.getElementById('desk-p-btn').addEventListener('click', () => togglePause(true));
     document.getElementById('touch-magnify-btn').addEventListener('click', () => toggleMagnifyEnemy());
+    document.getElementById('touch-reload-btn').addEventListener('click', () => triggerSwivelReload());
 
     function bindHoldButton(btnId, onStateChange, onImmediatePress) {
       const btn = document.getElementById(btnId);
@@ -3394,6 +3546,7 @@
       else if (e.code === 'KeyP') togglePause();
       else if (e.code === 'KeyC') cycleCameraMode();
       else if (e.code === 'KeyM') toggleMagnifyEnemy();
+      else if (e.code === 'KeyR') triggerSwivelReload();
       else if (e.code === 'KeyA') adjustEnemySpeed(0.2);
       else if (e.code === 'KeyD') adjustEnemySpeed(-0.2);
       else if (e.code === 'KeyW') adjustCycleSpeed(0.25);
@@ -3665,6 +3818,21 @@
           player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, 0, 10 * dt);
         }
         player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, state.aimYaw, 14 * dt);
+
+        // Tick down the Swivel Core Reload Timer; if player forgets to reload on time, Core Meltdown kills them
+        state.swivelCoreTimer -= dt;
+        updateSwivelCoreUI();
+        if (state.swivelCoreTimer <= 4.5 && !state.swivelWarned) {
+          state.swivelWarned = true;
+          sfx.playDamage();
+          showToast('⚠️ Swivel Core Critical! Press R or 🔄 Reload Now or You Will Die!');
+        }
+        if (state.swivelCoreTimer <= 0) {
+          spawnVoxelExplosion(player.position, [0xff758f, 0xfacc15, 0xef4444, 0xffffff], 32, true);
+          triggerYouDied('💥 Swivel Core Overload — Forgot to Reload on Time!');
+          renderer.render(scene, camera);
+          return;
+        }
       } else {
         state.aimYaw = 0;
         player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, 0, 12 * dt);
@@ -3733,12 +3901,39 @@
 
       for (let i = pickups.length - 1; i >= 0; i--) {
         const p = pickups[i]; p.mesh.rotation.y += 2.4 * dt; p.mesh.position.y = Math.sin(now + i) * 0.15;
-        if (Math.abs(p.mesh.position.x - player.position.x) < 1.75) {
+        let collected = false;
+
+        if (currentCamMode.isFixedSwivel) {
+          // In Fixed Swivel mode, player can also shoot floating fruits/ammo capsules in front of them to trigger reload + heal
+          for (let j = projectiles.length - 1; j >= 0; j--) {
+            const b = projectiles[j];
+            if (Math.abs(b.position.z - p.mesh.position.z) < 1.75 && Math.abs(b.position.x - p.mesh.position.x) < 1.75) {
+              scene.remove(b);
+              projectiles.splice(j, 1);
+              collected = true;
+              break;
+            }
+          }
+        } else if (Math.abs(p.mesh.position.x - player.position.x) < 1.75 && Math.abs(p.mesh.position.z - player.position.z) < 2.2) {
+          collected = true;
+        }
+
+        if (collected) {
           if (p.kind === 'fruit') {
             state.fruitsEaten++; state.health = Math.min(6, state.health + 1); sfx.playFruit();
+            if (currentCamMode.isFixedSwivel) {
+              state.swivelCoreTimer = state.swivelCoreMax;
+              state.swivelWarned = false;
+              updateSwivelCoreUI();
+            }
             spawnPastelBurst(p.mesh.position, [0xff758f, 0xffafcc, 0x95d5b2, 0xffd6a5], 16); showToast('🍑 Ate Pastel Peach! +0.5 ♥ & +100 Score');
           } else {
             state.ammo += 20; sfx.playReload();
+            if (currentCamMode.isFixedSwivel) {
+              state.swivelCoreTimer = state.swivelCoreMax;
+              state.swivelWarned = false;
+              updateSwivelCoreUI();
+            }
             spawnPastelBurst(p.mesh.position, [0xfdffb6, 0xffd6a5, 0x9bf6ff, 0xffffff], 16); showToast('⚡ Auto-Reloaded +20 Blaster Energy!');
           }
           scene.remove(p.mesh); pickups.splice(i, 1); recalcScore(); updateHUD();
