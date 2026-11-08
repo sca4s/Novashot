@@ -57,10 +57,13 @@
 
     body, html {
       width: 100%;
-      height: 100%;
+      height: var(--app-height, 100dvh);
+      max-height: var(--app-height, 100dvh);
       overflow: hidden;
       background: #d8e2dc;
-      touch-action: none;
+      /* Keep the document non-scrollable; individual overlays may opt into scrolling. */
+      touch-action: auto;
+      overscroll-behavior: none;
     }
 
     #game-canvas {
@@ -70,6 +73,7 @@
       height: 100%;
       display: block;
       z-index: 1;
+      touch-action: none;
     }
 
     /* ===================================================================== */
@@ -166,6 +170,28 @@
         clip-path: circle(175% at 0% 0%);
         opacity: 0;
       }
+    }
+
+    #theme-transition-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0;
+      contain: strict;
+      animation: themeFadeOut 360ms ease-out forwards;
+    }
+
+    #theme-transition-overlay.to-dark { background: rgba(8, 10, 24, 0.22); }
+    #theme-transition-overlay.to-light { background: rgba(255, 255, 255, 0.20); }
+
+    @keyframes themeFadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #theme-transition-overlay { animation-duration: 1ms; }
     }
 
     /* Smooth Individual UI Panel Slide, Fade & Layout Collapse States */
@@ -398,16 +424,54 @@
     /* Modal Overlays */
     .modal-backdrop {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--app-height, 100dvh);
       z-index: 50;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: max(12px, env(safe-area-inset-top, 12px))
+               max(12px, env(safe-area-inset-right, 12px))
+               max(12px, env(safe-area-inset-bottom, 12px))
+               max(12px, env(safe-area-inset-left, 12px));
       background: var(--ui-backdrop);
+      touch-action: pan-y;
+      overflow-y: auto;
+      overscroll-behavior: contain;
       backdrop-filter: blur(16px) saturate(160%);
       -webkit-backdrop-filter: blur(16px) saturate(160%);
       transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.42s ease, background 0.45s ease;
+    }
+
+    /* Outer Modal Card fits user's screen height while keeping all inner elements at full size */
+    .modal-fit-card {
+      max-height: calc(var(--app-height, 100dvh) - 24px);
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      flex-shrink: 0;
+      margin-block: auto;
+    }
+
+    /* High-Contrast 360° Avatar Studio Backdrop so skin tones never blend into the background */
+    #avatar-preview-container {
+      background: radial-gradient(circle at 50% 42%, #2b2d42 0%, #181a2c 65%, #0f101e 100%) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.42) !important;
+      box-shadow: inset 0 0 32px rgba(0, 0, 0, 0.55), 0 12px 28px rgba(15, 20, 45, 0.25) !important;
+    }
+
+    #live-hud-root {
+      height: var(--app-height, 100dvh);
+      max-height: var(--app-height, 100dvh);
+      touch-action: none;
+      padding-top: max(6px, env(safe-area-inset-top, 6px));
+      padding-right: max(6px, env(safe-area-inset-right, 6px));
+      padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+      padding-left: max(6px, env(safe-area-inset-left, 6px));
     }
 
     .modal-backdrop.hidden-modal {
@@ -617,6 +681,257 @@
       background: rgba(156, 163, 175, 0.45);
       border-radius: 999px;
     }
+  
+
+    /* ===================================================================== */
+    /* RESPONSIVE HUD: SCALE PANELS TO THE ACTUAL MOBILE VIEWPORT            */
+    /* ===================================================================== */
+    @media (max-width: 600px) {
+      #live-hud-root {
+        padding-top: max(5px, env(safe-area-inset-top, 5px));
+        padding-right: max(6px, env(safe-area-inset-right, 6px));
+        padding-bottom: max(7px, env(safe-area-inset-bottom, 7px));
+        padding-left: max(6px, env(safe-area-inset-left, 6px));
+      }
+
+      #top-announcement-row.row-active {
+        max-height: 42px;
+        margin-bottom: 4px;
+      }
+      #top-unified-capsule.capsule-visible { padding: 3px 8px; }
+      #toast-segment { font-size: 10px; line-height: 1.2; }
+      #unhide-all-ui-btn { padding: 3px 8px; font-size: 10px; }
+
+      #hud-top-bar { gap: 0; }
+      #hud-uppermost-row { margin-bottom: 5px; }
+      #hud-brand-card {
+        width: 100%;
+        max-width: 100%;
+        gap: 8px;
+        padding: 7px 9px;
+        border-radius: 18px;
+      }
+      #hud-brand-card > svg { width: 33px; height: 33px; }
+      #hud-brand-card .overflow-hidden { flex: 1 1 0; min-width: 0; }
+      #hud-brand-card .overflow-hidden > div:first-child {
+        gap: 5px;
+        margin-bottom: 3px;
+      }
+      #hud-brand-card .overflow-hidden > div:first-child h1 {
+        font-size: 14px;
+        line-height: 1.2;
+        margin-right: 0;
+      }
+      #hud-brand-card .ios-glass-pill {
+        padding: 3px 7px !important;
+        font-size: 9px !important;
+        line-height: 1.2;
+      }
+      #hud-brand-card .overflow-hidden > div:last-child {
+        gap: 5px;
+        font-size: 9px;
+        line-height: 1.3;
+        letter-spacing: 0.035em;
+      }
+      #hud-brand-card .overflow-hidden > div:last-child > span { white-space: nowrap; }
+
+      #hud-lr-row { gap: 6px; align-items: stretch; }
+      #lr-spacer-left, #lr-spacer-middle, #lr-spacer-right { display: none; }
+
+      #hud-health-card {
+        flex: 1 1 58%;
+        width: 58%;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: none;
+        padding: 7px 8px;
+        border-radius: 18px;
+      }
+      #hud-health-card > div:first-child {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 5px;
+        font-size: 9px;
+        line-height: 1.25;
+      }
+      #health-text { font-size: 9px; white-space: nowrap; }
+      #health-bar { column-gap: 3px; }
+      #health-bar .health-seg { height: 7px; }
+      #hud-health-card > div:nth-of-type(3) {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 3px 5px;
+        margin-top: 5px;
+        font-size: 9px;
+        line-height: 1.25;
+      }
+      #hud-health-card .hide-ui-chip { width: 17px; height: 17px; font-size: 9px; }
+
+      #hud-score-card {
+        position: relative;
+        flex: 0 0 40%;
+        min-width: 0;
+        min-height: 0 !important;
+        max-width: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: center;
+        align-items: center;
+        gap: 3px 5px;
+        padding: 7px 23px 7px 8px;
+        border-radius: 18px;
+      }
+      #hud-score-card > div { min-width: 0; }
+      #hud-score-card > div:nth-child(1) > span:first-child,
+      #hud-score-card > div:nth-child(2) > span:first-child {
+        font-size: 8px;
+        letter-spacing: 0.04em;
+      }
+      #hud-score-card #score-val,
+      #hud-score-card #high-score-val { font-size: 16px; line-height: 1.1; }
+      #hud-score-card > div:nth-child(3) { display: none; }
+      #hud-best-time-stat {
+        display: flex !important;
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+        padding-top: 3px;
+        margin-top: 1px;
+        border-top: 1px solid var(--ui-border);
+      }
+      #hud-best-time-stat > span:first-child { font-size: 8px; white-space: nowrap; }
+      #hud-score-card #hud-best-time-val { font-size: 13px; line-height: 1.1; }
+      #hud-score-card > button {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 17px;
+        height: 17px;
+        margin: 0;
+        font-size: 9px;
+      }
+
+      #touch-controls-layer { gap: 7px !important; }
+      #touch-controls-layer > div:first-child { gap: 5px; }
+      #touch-controls-layer > div:first-child > div {
+        gap: 5px;
+        padding: 5px 7px;
+        border-radius: 14px;
+        font-size: 10px;
+        line-height: 1.2;
+      }
+      #touch-controls-layer > div:first-child > div > button {
+        width: 25px;
+        height: 25px;
+        border-radius: 9px;
+        font-size: 12px;
+      }
+      #touch-controls-layer > div:first-child > button {
+        gap: 4px;
+        padding: 6px 8px;
+        border-radius: 13px;
+        font-size: 10px;
+        line-height: 1.2;
+      }
+      #touch-controls-layer > div:last-child {
+        gap: 6px;
+        padding: 0 1px 2px;
+      }
+      #touch-left-btn, #touch-right-btn {
+        width: 52px;
+        height: 52px;
+        border-radius: 17px;
+        font-size: 22px;
+      }
+      #touch-magnify-btn, #touch-reload-btn {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+      }
+      #touch-magnify-btn > span:first-child,
+      #touch-reload-btn > span:first-child { font-size: 17px; }
+      #touch-magnify-label, #touch-reload-label { font-size: 8px; }
+      #touch-fire-btn {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+      }
+      #touch-fire-btn > span:first-child { font-size: 22px; }
+      #touch-fire-btn > span:last-child { font-size: 9px; margin-top: 2px; }
+
+      #hud-desktop-dock {
+        gap: 5px;
+        padding: 7px 8px;
+        border-radius: 18px;
+        font-size: 10px;
+      }
+
+      #saved-records-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        padding: 8px 7px;
+        font-size: 10px;
+      }
+      #saved-records-strip > span {
+        min-width: 0;
+        text-align: center;
+        line-height: 1.25;
+        white-space: normal;
+      }
+      #saved-records-strip strong { display: block; font-size: 12px; margin-top: 2px; }
+
+      /* Reduce expensive glass blur on phones while preserving clear text and contrast. */
+      .ios-glass {
+        backdrop-filter: blur(15px) saturate(155%);
+        -webkit-backdrop-filter: blur(15px) saturate(155%);
+      }
+      .ios-glass-subcard, .ios-glass-pill {
+        backdrop-filter: blur(11px) saturate(150%);
+        -webkit-backdrop-filter: blur(11px) saturate(150%);
+      }
+      .ios-glass-pill {
+        transition: background 0.2s ease, border-color 0.2s ease,
+                    box-shadow 0.2s ease, transform 0.16s ease, color 0.2s ease;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #hud-brand-card { gap: 6px; padding: 6px 7px; }
+      #hud-brand-card > svg { width: 29px; height: 29px; }
+      #hud-brand-card .ios-glass-pill { padding: 3px 5px !important; font-size: 8.5px !important; }
+      #hud-health-card { padding: 6px 7px; }
+      #hud-health-card > div:nth-of-type(3) { font-size: 8px; }
+      #hud-score-card { flex-basis: 41%; padding-left: 7px; }
+      #touch-left-btn, #touch-right-btn { width: 48px; height: 48px; }
+      #touch-magnify-btn, #touch-reload-btn { width: 43px; height: 43px; }
+      #touch-fire-btn { width: 59px; height: 59px; }
+    }
+
+    @media (max-width: 600px) and (max-height: 720px) {
+      #hud-uppermost-row { margin-bottom: 3px; }
+      #hud-brand-card { padding-top: 5px; padding-bottom: 5px; }
+      #hud-health-card, #hud-score-card { padding-top: 5px; padding-bottom: 5px; }
+      #touch-controls-layer { gap: 5px !important; }
+      #touch-left-btn, #touch-right-btn { width: 44px; height: 44px; }
+      #touch-magnify-btn, #touch-reload-btn { width: 40px; height: 40px; }
+      #touch-fire-btn { width: 55px; height: 55px; }
+    }
+
+    @media (min-width: 1100px) {
+      #live-hud-root { padding: 20px 26px; }
+      #hud-brand-card { padding: 14px 18px; gap: 18px; }
+      #hud-brand-card > svg { width: 50px; height: 50px; }
+      #hud-health-card, #hud-score-card { padding: 15px 18px; min-height: 92px; }
+      #hud-score-card { gap: 22px; }
+      #touch-left-btn, #touch-right-btn { width: 88px; height: 88px; }
+      #touch-magnify-btn, #touch-reload-btn { width: 70px; height: 70px; }
+      #touch-fire-btn { width: 104px; height: 104px; }
+    }
+
   </style>
 </head>
 <body class="theme-light">
@@ -639,27 +954,27 @@
   <!-- 1. TWO-STEP GAME INITIATION MODAL                                     -->
   <!-- ===================================================================== -->
   <div id="device-modal" class="modal-backdrop">
-    <div id="initiation-card" class="ios-glass transition-zone rounded-[40px] max-w-3xl w-full p-5 sm:p-8 relative overflow-y-auto max-h-[93vh]">
+    <div id="initiation-card" class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-3xl w-full p-5 sm:p-8 relative">
       <!-- Decorative Ambient Glow Orbs -->
       <div class="absolute -top-20 -right-20 w-52 h-52 rounded-full bg-pink-300/35 blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-20 -left-20 w-52 h-52 rounded-full bg-indigo-300/35 blur-3xl pointer-events-none"></div>
 
       <!-- Top Header & Step Indicator + Theme Switcher -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-5 relative z-10">
-        <span class="text-[11px] font-extrabold uppercase tracking-[0.24em] ios-glass-pill transition-zone px-4 py-1.5 rounded-full">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4 relative z-10">
+        <span class="text-[11px] font-extrabold uppercase tracking-[0.26em] ios-glass-pill transition-zone px-3.5 py-1 rounded-full">
           MADE BY SOU.
         </span>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <!-- Step Indicator Pills -->
-          <div class="ios-glass-subcard transition-zone px-3.5 py-1.5 rounded-full flex items-center gap-2.5 text-xs font-extrabold">
+          <div class="ios-glass-subcard transition-zone px-3 py-1 rounded-full flex items-center gap-2 text-xs font-extrabold">
             <span id="step-dot-1" class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
             <span id="step-label-text">Step 1 of 2</span>
             <span id="step-dot-2" class="w-2.5 h-2.5 rounded-full bg-slate-400/40"></span>
           </div>
 
           <!-- Instant Theme Switcher Button -->
-          <button id="init-theme-toggle-btn" class="ios-glass-pill transition-zone px-3.5 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-2" title="Switch White / Dark UI">
+          <button id="init-theme-toggle-btn" class="ios-glass-pill transition-zone px-3.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5" title="Switch White / Dark UI">
             <span id="init-theme-icon">☀️</span>
             <span id="init-theme-text">White UI</span>
           </button>
@@ -667,7 +982,7 @@
       </div>
 
       <!-- Brand Title with Luxurious Shooter Icon & Strict Black/White Title -->
-      <div class="flex flex-col items-center text-center mb-6 relative z-10">
+      <div class="flex flex-col items-center text-center mb-5 relative z-10">
         <div class="flex items-center justify-center gap-3.5">
           <svg class="w-14 h-14 rounded-[20px] shadow-xl shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="Novashot Luxury Crest">
             <defs>
@@ -699,9 +1014,9 @@
         </p>
 
         <!-- Saved All-Time Records Strip -->
-        <div class="mt-3.5 ios-glass-subcard transition-zone rounded-2xl px-5 py-2.5 flex flex-wrap items-center justify-center gap-6 text-xs font-extrabold">
+        <div id="saved-records-strip" class="mt-3 ios-glass-subcard transition-zone rounded-2xl px-5 py-2 flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-xs font-extrabold">
           <span>🏆 Best Score: <strong id="menu-best-score" class="text-rose-400">0</strong></span>
-          <span>⏱️ Best Time: <strong id="menu-best-time" class="text-indigo-400">00:00</strong></span>
+          <span>⏱️ Best Time: <strong id="menu-best-time" class="text-indigo-400">00:00.0</strong></span>
           <span>☀️ Max Days: <strong id="menu-best-days" class="text-amber-400">1</strong></span>
         </div>
       </div>
@@ -723,7 +1038,7 @@
               </p>
             </div>
             <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/15 px-3 py-1 rounded-full">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/15 px-2.5 py-1 rounded-full">
                 Touch Controls
               </span>
               <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar & Studio →</span>
@@ -742,7 +1057,7 @@
               </p>
             </div>
             <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/15 px-3 py-1 rounded-full">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/15 px-2.5 py-1 rounded-full">
                 Keyboard + Click
               </span>
               <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar & Studio →</span>
@@ -917,11 +1232,11 @@
       </div>
 
       <!-- Quick Rules Footer -->
-      <div class="ios-glass-subcard transition-zone rounded-2xl p-3 mt-5 text-[11px] ui-subtitle flex flex-wrap justify-around gap-3 font-bold text-center relative z-10">
+      <div class="ios-glass-subcard transition-zone rounded-2xl p-3.5 mt-4 text-xs ui-subtitle flex flex-wrap justify-around gap-3 font-bold text-center relative z-10">
         <span>🌀 Portal Wall-Wrap</span>
         <span>🍑 Damage Spawns Healing Fruit</span>
         <span>🛡️ 1s Enemy Grace Delay</span>
-        <span>🎥 5 Smooth Cam Modes</span>
+        <span>🎥 6 Smooth Cam Modes</span>
       </div>
     </div>
   </div>
@@ -930,7 +1245,7 @@
   <!-- 1B. "YOU DIED" MODAL OVERLAY                                          -->
   <!-- ===================================================================== -->
   <div id="you-died-modal" class="modal-backdrop hidden-modal">
-    <div class="ios-glass transition-zone rounded-[40px] max-w-md w-full p-6 sm:p-8 text-center relative overflow-hidden">
+    <div class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-md w-full p-6 sm:p-8 text-center relative">
       <div class="absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-400/35 blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-indigo-400/35 blur-3xl pointer-events-none"></div>
 
@@ -975,7 +1290,7 @@
   <!-- 2. DEDICATED PAUSE & WORLD STUDIO OVERLAY                             -->
   <!-- ===================================================================== -->
   <div id="pause-modal" class="modal-backdrop hidden-modal">
-    <div class="ios-glass transition-zone rounded-[40px] max-w-xl w-full p-5 sm:p-8 relative overflow-y-auto max-h-[92vh]">
+    <div class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-xl w-full p-5 sm:p-8 relative">
       <div class="absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-300/30 blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
 
@@ -1145,7 +1460,7 @@
   <!-- ===================================================================== -->
   <!-- 4. LIVE HUD & INTERACTIVE CONTROL LAYER                               -->
   <!-- ===================================================================== -->
-  <div class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-3 sm:p-5">
+  <div id="live-hud-root" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-2.5 sm:p-5">
 
     <!-- TOP REGION: UNIFIED ANNOUNCEMENT+UNHIDE CAPSULE ON VERY TOP + UPPERMOST UI + ALIGNED LEFT/RIGHT UI -->
     <div id="hud-top-stack" class="w-full flex flex-col items-center">
@@ -1246,7 +1561,7 @@
           <div id="lr-spacer-left" class="lr-flex-spacer" style="flex-grow: 0;"></div>
 
           <!-- LEFT UI: Health & Collectibles Card -->
-          <div id="hud-health-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-3.5 sm:px-4 py-2.5 w-auto min-w-[190px] sm:min-w-[235px] min-h-[78px] flex flex-col justify-between pointer-events-auto">
+          <div id="hud-health-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-4 py-2.5 w-full sm:w-auto min-w-[235px] min-h-[78px] flex flex-col justify-between pointer-events-auto">
             <div class="flex justify-between items-center gap-2 text-[11px] font-extrabold tracking-wider uppercase mb-1.5 ui-title">
               <span>♥ Pastel Shield</span>
               <div class="flex items-center gap-1.5">
@@ -1264,16 +1579,16 @@
               <div class="health-seg active"></div>
               <div class="health-seg active"></div>
             </div>
-            <div class="flex justify-between items-center gap-2 text-xs font-bold mt-2 ui-title">
-              <span>🍑 <strong id="fruits-count" class="text-rose-500">0</strong></span>
-              <span>⚡ <strong id="ammo-count" class="text-amber-500">40</strong></span>
-              <span>🎯 <strong id="kills-count" class="text-sky-500">0</strong></span>
+            <div class="flex justify-between items-center text-xs font-bold mt-2 ui-title">
+              <span>🍑 Fruit: <strong id="fruits-count" class="text-rose-500">0</strong></span>
+              <span>⚡ Ammo: <strong id="ammo-count" class="text-amber-500">40</strong></span>
+              <span>🎯 Hits: <strong id="kills-count" class="text-sky-500">0</strong></span>
             </div>
 
             <!-- Exclusive Fixed Swivel Mode Reload & Core Stability Bar -->
-            <div id="swivel-core-bar-wrap" class="hidden mt-2 pt-2 border-t border-white/30 flex-col gap-1">
+            <div id="swivel-core-bar-wrap" class="hidden mt-2 pt-1.5 border-t border-white/30 flex-col gap-1">
               <div class="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
-                <span class="text-sky-400 flex items-center gap-1">🔄 Swivel Core (R)</span>
+                <span class="text-sky-400 flex items-center gap-1">🔄 Swivel Core (Press R)</span>
                 <span id="swivel-core-timer-txt" class="text-emerald-400 tabular-nums">15.0s</span>
               </div>
               <div class="w-full h-2 rounded-full bg-slate-500/30 overflow-hidden p-0.5">
@@ -1285,19 +1600,23 @@
           <div id="lr-spacer-middle" class="lr-flex-spacer" style="flex-grow: 1; min-width: 10px;"></div>
 
           <!-- RIGHT UI: Score, Time Stopwatch & Mode Telemetry Card -->
-          <div id="hud-score-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-3.5 sm:px-4 py-2.5 min-h-[78px] flex items-center gap-3 sm:gap-4 pointer-events-auto">
+          <div id="hud-score-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-4 py-2.5 min-h-[78px] flex items-center gap-3.5 sm:gap-5 pointer-events-auto">
             <div class="flex flex-col">
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Score</span>
-              <span id="score-val" class="text-lg sm:text-2xl font-extrabold text-emerald-500 tabular-nums leading-tight">0</span>
+              <span id="score-val" class="text-xl sm:text-2xl font-extrabold text-emerald-500 tabular-nums leading-tight">0</span>
             </div>
             <div class="flex flex-col">
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best</span>
-              <span id="high-score-val" class="text-lg sm:text-2xl font-extrabold text-amber-500 tabular-nums leading-tight">0</span>
+              <span id="high-score-val" class="text-xl sm:text-2xl font-extrabold text-amber-500 tabular-nums leading-tight">0</span>
             </div>
             <div class="flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">⏱️ Time</span>
-              <span id="score-card-timer-val" class="text-sm sm:text-lg font-extrabold text-indigo-500 tabular-nums leading-tight">00:00.0</span>
-              <span id="score-card-phase-cd" class="text-[9px] font-extrabold text-rose-400 tabular-nums">Next: 20s</span>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">⏱️ Stopwatch</span>
+              <span id="score-card-timer-val" class="text-base sm:text-lg font-extrabold text-indigo-500 tabular-nums leading-tight">00:00.0</span>
+              <span id="score-card-phase-cd" class="text-[9px] font-extrabold text-rose-400 tabular-nums">Next Phase: 20s</span>
+            </div>
+            <div id="hud-best-time-stat" class="hidden flex-col">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best Time</span>
+              <span id="hud-best-time-val" class="text-base sm:text-lg font-extrabold text-purple-500 tabular-nums leading-tight">00:00.0</span>
             </div>
             <div class="hidden md:flex flex-col">
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Visitor (E)</span>
@@ -1307,7 +1626,7 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">World (B)</span>
               <span id="biome-val" class="text-sm font-extrabold text-sky-500">Grass</span>
             </div>
-            <button data-hide-target="hud-score-card" title="Hide Score & Telemetry Panel" class="hide-ui-chip ios-glass-pill transition-zone self-start shrink-0">
+            <button data-hide-target="hud-score-card" title="Hide Score & Telemetry Panel" class="hide-ui-chip ios-glass-pill transition-zone self-start">
               ✕
             </button>
           </div>
@@ -1756,7 +2075,7 @@
       }
     };
 
-    const SKIN_TONES = ['#ffd1dc', '#ffdfc4', '#f5cba7', '#e59866', '#ca6f1e', '#873600', '#38bdf8', '#c084fc'];
+    const SKIN_TONES = ['#ffadc6', '#ffcaa6', '#f5b882', '#e08e55', '#b85d19', '#782f04', '#38bdf8', '#a855f7'];
     const PASTEL_DRESS_SWATCHES = [
       '#2563eb', '#ec4899', '#7c3aed', '#059669',
       '#f59e0b', '#e11d48', '#0891b2', '#1e1b4b'
@@ -1810,7 +2129,7 @@
       character: {
         gender: 'female',
         outfit: 0,
-        skinTone: '#ffdfc4',
+        skinTone: '#ffcaa6',
         shirtColors: ['#ec4899', '#2563eb'],
         pantColor: '#1e1b4b'
       },
@@ -2116,8 +2435,8 @@
       const skinMat = new THREE.MeshStandardMaterial({
         color: skinColorObj,
         emissive: skinColorObj,
-        emissiveIntensity: 0.22,
-        roughness: 0.3,
+        emissiveIntensity: 0.05,
+        roughness: 0.42,
         metalness: 0.04
       });
       const shirtMat = new THREE.MeshStandardMaterial({ map: shirtTex, roughness: 0.26, metalness: 0.08 });
@@ -2608,25 +2927,27 @@
     const previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, antialias: true, alpha: true });
     previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     previewRenderer.shadowMap.enabled = true;
+    previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    previewRenderer.toneMappingExposure = 0.92;
 
     const previewScene = new THREE.Scene();
     const previewCamera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
     previewCamera.position.set(0, 2.05, 5.4);
     previewCamera.lookAt(0, 1.45, 0);
 
-    const previewKeyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+    const previewKeyLight = new THREE.DirectionalLight(0xffffff, 0.78);
     previewKeyLight.position.set(4, 7, 6);
-    const previewFillLight = new THREE.DirectionalLight(0xffd6a5, 0.65);
+    const previewFillLight = new THREE.DirectionalLight(0xffd6a5, 0.35);
     previewFillLight.position.set(-5, 4, 5);
-    const previewRimLight = new THREE.DirectionalLight(0x9bf6ff, 0.75);
+    const previewRimLight = new THREE.DirectionalLight(0x9bf6ff, 0.45);
     previewRimLight.position.set(0, 5, -6);
-    previewScene.add(previewKeyLight, previewFillLight, previewRimLight, new THREE.AmbientLight(0xffffff, 0.85));
+    previewScene.add(previewKeyLight, previewFillLight, previewRimLight, new THREE.AmbientLight(0xffffff, 0.52));
 
     // Studio Turntable Pedestal
     const previewPedestalGroup = new THREE.Group();
     const pedestalDisc = new THREE.Mesh(
       new THREE.CylinderGeometry(1.35, 1.5, 0.18, 36),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.15 })
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.25 })
     );
     pedestalDisc.position.y = -0.09;
     const pedestalGlowRim = new THREE.Mesh(
@@ -2842,21 +3163,36 @@
     // =========================================================================
     // 9. THEME TRANSITION, HIDE/UNHIDE & ANNOUNCEMENT CAPSULE
     // =========================================================================
+    let themeTransitionOverlay = null;
     function triggerUpperLeftToLowerRightTransition(targetTheme) {
-      document.body.className = targetTheme === 'dark' ? 'theme-dark' : 'theme-light';
+      if (targetTheme !== 'dark' && targetTheme !== 'light') return;
+      if (state.uiTheme === targetTheme) return;
+
+      // A single viewport-level fade is much cheaper than animating clip-paths
+      // inside every glass panel, especially while the setup card is scrolling.
+      if (themeTransitionOverlay) {
+        themeTransitionOverlay.remove();
+        themeTransitionOverlay = null;
+      }
+      const overlay = document.createElement('div');
+      overlay.id = 'theme-transition-overlay';
+      overlay.className = targetTheme === 'dark' ? 'to-dark' : 'to-light';
+      themeTransitionOverlay = overlay;
+      document.body.appendChild(overlay);
+      overlay.addEventListener('animationend', () => {
+        if (themeTransitionOverlay === overlay) themeTransitionOverlay = null;
+        overlay.remove();
+      }, { once: true });
+
+      document.body.classList.toggle('theme-dark', targetTheme === 'dark');
+      document.body.classList.toggle('theme-light', targetTheme === 'light');
       state.uiTheme = targetTheme;
       document.getElementById('hud-theme-label').textContent = targetTheme === 'dark' ? 'Dark' : 'White';
       document.getElementById('init-theme-text').textContent = targetTheme === 'dark' ? 'Dark UI' : 'White UI';
       document.getElementById('init-theme-icon').textContent = targetTheme === 'dark' ? '🌙' : '☀️';
 
-      const glassElements = document.querySelectorAll('.ios-glass, .ios-glass-subcard, .ios-glass-pill');
-      glassElements.forEach(el => {
-        const oldOverlay = el.querySelector('.ul-lr-transition-overlay');
-        if (oldOverlay) oldOverlay.remove();
-        const overlay = document.createElement('div');
-        overlay.className = `ul-lr-transition-overlay ${targetTheme === 'dark' ? 'to-dark' : 'to-light'}`;
-        el.appendChild(overlay);
-        setTimeout(() => overlay.remove(), 720);
+      document.querySelectorAll('.step2-theme-btn, .pause-theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === targetTheme);
       });
       sfx.playUI(1.2);
     }
@@ -2957,13 +3293,13 @@
 
       if (brandHidden) {
         if (healthHidden && !scoreHidden) {
-          leftSpacer.style.flexGrow = '0';
-          midSpacer.style.flexGrow = '1';
-          rightSpacer.style.flexGrow = '0';
+          leftSpacer.style.flexGrow = '1';
+          midSpacer.style.flexGrow = '0';
+          rightSpacer.style.flexGrow = '1';
         } else if (!healthHidden && scoreHidden) {
-          leftSpacer.style.flexGrow = '0';
-          midSpacer.style.flexGrow = '1';
-          rightSpacer.style.flexGrow = '0';
+          leftSpacer.style.flexGrow = '1';
+          midSpacer.style.flexGrow = '0';
+          rightSpacer.style.flexGrow = '1';
         } else if (healthHidden && scoreHidden) {
           leftSpacer.style.flexGrow = '0';
           midSpacer.style.flexGrow = '1';
@@ -3157,6 +3493,7 @@
       state.isPaused = paused !== undefined ? paused : !state.isPaused;
       const pauseModal = document.getElementById('pause-modal');
       if (state.isPaused) {
+        updateBestTimeRecord(true);
         pauseModal.classList.remove('hidden-modal');
         document.getElementById('pause-curr-score').textContent = state.score;
         document.getElementById('pause-best-score').textContent = state.highScore;
@@ -3182,6 +3519,7 @@
 
     function triggerYouDied(customMessage) {
       state.isDead = true;
+      updateBestTimeRecord(true);
       sfx.playGameOver();
       document.getElementById('died-score-val').textContent = state.score;
       document.getElementById('died-best-val').textContent = state.highScore;
@@ -3203,10 +3541,37 @@
       recalcScore(); updateHUD();
     }
 
+    let lastBestTimeDisplayTick = -1;
+    let lastBestTimePersistSecond = Math.floor(state.bestTime);
+
+    function updateBestTimeRecord(forcePersist = false) {
+      if (state.sessionTime > state.bestTime) state.bestTime = state.sessionTime;
+
+      const displayTick = Math.floor(state.bestTime * 10);
+      if (forcePersist || displayTick !== lastBestTimeDisplayTick) {
+        const formatted = formatStopwatch(state.bestTime);
+        const hudBestTime = document.getElementById('hud-best-time-val');
+        const menuBestTime = document.getElementById('menu-best-time');
+        if (hudBestTime) hudBestTime.textContent = formatted;
+        if (menuBestTime) menuBestTime.textContent = formatted;
+        lastBestTimeDisplayTick = displayTick;
+      }
+
+      const wholeSecond = Math.floor(state.bestTime);
+      if (forcePersist || wholeSecond > lastBestTimePersistSecond) {
+        try {
+          localStorage.setItem('skyshift_best_time', String(state.bestTime));
+        } catch (error) {
+          console.warn('Unable to persist Best Time in this browser session.', error);
+        }
+        lastBestTimePersistSecond = wholeSecond;
+      }
+    }
+
     function recalcScore() {
       state.score = (state.enemiesKilled * 50) + (state.fruitsEaten * 100) + (state.bulletsFired * 5) + (state.daysSurvived * 200);
       if (state.score > state.highScore) { state.highScore = state.score; localStorage.setItem('shoooter_highscore', String(state.highScore)); }
-      if (state.sessionTime > state.bestTime) { state.bestTime = state.sessionTime; localStorage.setItem('skyshift_best_time', String(state.bestTime)); }
+      updateBestTimeRecord();
       if (state.daysSurvived > state.bestDays) { state.bestDays = state.daysSurvived; localStorage.setItem('skyshift_best_days', String(state.bestDays)); }
     }
 
@@ -3217,6 +3582,7 @@
     }
 
     function updateHUD() {
+      updateBestTimeRecord();
       document.getElementById('score-val').textContent = state.score;
       document.getElementById('high-score-val').textContent = state.highScore;
       document.getElementById('menu-best-score').textContent = state.highScore;
@@ -3235,43 +3601,55 @@
     // =========================================================================
     // 11. 3-SECOND ROTATING CIRCULAR COUNTDOWN ENGINE
     // =========================================================================
+    let countdownRafId = null;
     function startCircularCountdown(onComplete, seconds = 3) {
+      if (countdownRafId) cancelAnimationFrame(countdownRafId);
       state.isCountingDown = true;
       state.countdownValue = seconds;
       const overlay = document.getElementById('countdown-overlay');
       const numeralEl = document.getElementById('countdown-numeral');
       const msStopwatchEl = document.getElementById('countdown-ms-stopwatch');
       const arcEl = document.getElementById('countdown-progress-arc');
+      const outerRimEl = document.getElementById('countdown-outer-rim');
       const subLabel = document.getElementById('countdown-sublabel');
       overlay.classList.add('active');
 
-      let remainingMs = seconds * 1000;
-      const totalDuration = remainingMs;
+      const totalDuration = seconds * 1000;
+      const startTime = performance.now();
       const circumference = 2 * Math.PI * 76;
       arcEl.style.strokeDasharray = circumference;
+      arcEl.style.strokeDashoffset = '0';
+      numeralEl.textContent = String(seconds);
+      subLabel.textContent = 'GET READY';
 
       let lastPlayedSec = seconds;
       sfx.playCountdownTick(false);
 
-      const cdInterval = setInterval(() => {
-        remainingMs -= 50;
+      function stepCountdown(now) {
+        const elapsed = now - startTime;
+        const remainingMs = Math.max(0, totalDuration - elapsed);
         const curSecs = Math.ceil(remainingMs / 1000);
         const secDecimal = (remainingMs / 1000).toFixed(2);
 
         msStopwatchEl.textContent = `0${secDecimal}s`;
         const progressFrac = remainingMs / totalDuration;
-        arcEl.style.strokeDashoffset = circumference * (1 - progressFrac);
+        arcEl.style.strokeDashoffset = String(circumference * (1 - progressFrac));
+
+        // Rotate the outer rim smoothly 360 degrees every 1000ms
+        if (outerRimEl) {
+          const deg = (elapsed / 1000) * 360;
+          outerRimEl.style.transform = `rotate(${deg.toFixed(2)}deg)`;
+        }
 
         if (curSecs !== lastPlayedSec && curSecs > 0) {
           lastPlayedSec = curSecs;
-          numeralEl.textContent = curSecs;
+          numeralEl.textContent = String(curSecs);
           sfx.playCountdownTick(false);
           numeralEl.style.transform = 'scale(1.22)';
           setTimeout(() => { numeralEl.style.transform = 'scale(1)'; }, 140);
         }
 
         if (remainingMs <= 0) {
-          clearInterval(cdInterval);
           numeralEl.textContent = 'GO!';
           subLabel.textContent = 'FIGHTING';
           msStopwatchEl.textContent = '00.00s';
@@ -3283,10 +3661,15 @@
             numeralEl.style.transform = 'scale(1)';
             numeralEl.textContent = '3';
             subLabel.textContent = 'GET READY';
+            if (outerRimEl) outerRimEl.style.transform = 'rotate(0deg)';
             if (onComplete) onComplete();
-          }, 350);
+          }, 320);
+          return;
         }
-      }, 50);
+        countdownRafId = requestAnimationFrame(stepCountdown);
+      }
+
+      countdownRafId = requestAnimationFrame(stepCountdown);
     }
 
     // =========================================================================
@@ -3466,6 +3849,7 @@
 
     document.getElementById('pause-main-menu-btn').addEventListener('click', () => {
       sfx.playUI(0.9);
+      updateBestTimeRecord(true);
       recalcScore();
       state.isPaused = false;
       state.gameStarted = false;
@@ -3788,6 +4172,7 @@
       }
 
       state.sessionTime += dt;
+      updateBestTimeRecord();
       const timerStr = formatStopwatch(state.sessionTime);
       document.getElementById('hud-timer-val').textContent = timerStr;
       document.getElementById('score-card-timer-val').textContent = timerStr;
@@ -3962,12 +4347,39 @@
       renderer.render(scene, camera);
     }
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
-      resizeAvatarPreview();
-    });
+    let viewportSyncFrame = 0;
+    let lastViewportWidth = 0;
+    let lastViewportHeight = 0;
+
+    function syncViewportDimensions() {
+      if (viewportSyncFrame) cancelAnimationFrame(viewportSyncFrame);
+      viewportSyncFrame = requestAnimationFrame(() => {
+        viewportSyncFrame = 0;
+        const viewport = window.visualViewport;
+        const vh = Math.max(1, Math.round(viewport ? viewport.height : window.innerHeight));
+        const vw = Math.max(1, Math.round(viewport ? viewport.width : window.innerWidth));
+        document.documentElement.style.setProperty('--app-height', `${vh}px`);
+
+        if (vw !== lastViewportWidth || vh !== lastViewportHeight) {
+          lastViewportWidth = vw;
+          lastViewportHeight = vh;
+          camera.aspect = vw / vh;
+          camera.updateProjectionMatrix();
+          // Keep both the WebGL drawing buffer and the canvas CSS box in sync with mobile browser chrome.
+          renderer.setSize(vw, vh, true);
+        }
+        resizeAvatarPreview();
+      });
+    }
+
+    window.addEventListener('resize', syncViewportDimensions, { passive: true });
+    window.addEventListener('orientationchange', syncViewportDimensions, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportDimensions, { passive: true });
+    }
 
     window.onload = function () {
+      syncViewportDimensions();
       buildPlayerModel();
       setupCharacterCustomization();
       updateAvatarPreviewModel();
