@@ -7,12 +7,15 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='luxBg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1b4b'/%3E%3Cstop offset='50%25' stop-color='%234c1d95'/%3E%3Cstop offset='100%25' stop-color='%23be185d'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldTrim' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fef08a'/%3E%3Cstop offset='50%25' stop-color='%23f472b6'/%3E%3Cstop offset='100%25' stop-color='%2393c5fd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='32' fill='url(%23luxBg)' stroke='url(%23goldTrim)' stroke-width='5'/%3E%3Ccircle cx='64' cy='64' r='42' fill='none' stroke='url(%23goldTrim)' stroke-width='3' stroke-dasharray='14 8'/%3E%3Ccircle cx='64' cy='64' r='28' fill='none' stroke='%23ffffff' stroke-opacity='0.45' stroke-width='2'/%3E%3Cpath d='M64 12 L64 32 M64 96 L64 116 M12 64 L32 64 M96 64 L116 64' stroke='url(%23goldTrim)' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M42 74 L58 46 L74 46 L88 58 L70 82 L46 82 Z' fill='url(%23goldTrim)'/%3E%3Ccircle cx='64' cy='64' r='9' fill='%23ffffff'/%3E%3C/svg%3E" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body class="theme-light">
 
+  <!-- 3D Pastel World Canvas -->
   <canvas id="game-canvas"></canvas>
 
+  <!-- Live Bullet Shot Target Pointer Reticle -->
   <div id="bullet-aim-pointer" aria-hidden="true">
     <svg viewBox="0 0 64 64" class="w-full h-full">
       <circle id="aim-reticle-outer" cx="32" cy="32" r="22" fill="none" stroke="#ff758f" stroke-width="2.5" stroke-dasharray="10 6" />
@@ -23,22 +26,30 @@
     </svg>
   </div>
 
-  <!-- INITIATION MODAL -->
+  <!-- ===================================================================== -->
+  <!-- 1. TWO-STEP GAME INITIATION MODAL                                     -->
+  <!-- ===================================================================== -->
   <div id="device-modal" class="modal-backdrop">
     <div id="initiation-card" class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-3xl w-full p-5 sm:p-8 relative">
+      <!-- Decorative Ambient Glow Orbs -->
       <div class="absolute -top-20 -right-20 w-52 h-52 rounded-full bg-pink-300/35 blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-20 -left-20 w-52 h-52 rounded-full bg-indigo-300/35 blur-3xl pointer-events-none"></div>
 
+      <!-- Top Header & Step Indicator + Theme Switcher -->
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4 relative z-10">
         <span class="text-[11px] font-extrabold uppercase tracking-[0.26em] ios-glass-pill transition-zone px-3.5 py-1 rounded-full">
           MADE BY SOU.
         </span>
+
         <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Step Indicator Pills -->
           <div class="ios-glass-subcard transition-zone px-3 py-1 rounded-full flex items-center gap-2 text-xs font-extrabold">
             <span id="step-dot-1" class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
             <span id="step-label-text">Step 1 of 2</span>
             <span id="step-dot-2" class="w-2.5 h-2.5 rounded-full bg-slate-400/40"></span>
           </div>
+
+          <!-- Instant Theme Switcher Button -->
           <button id="init-theme-toggle-btn" class="ios-glass-pill transition-zone px-3.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5" title="Switch White / Dark UI">
             <span id="init-theme-icon">☀️</span>
             <span id="init-theme-text">White UI</span>
@@ -46,15 +57,20 @@
         </div>
       </div>
 
+      <!-- Brand Title with Luxurious Shooter Icon & Strict Black/White Title -->
       <div class="flex flex-col items-center text-center mb-5 relative z-10">
         <div class="flex items-center justify-center gap-3.5">
-          <svg class="w-14 h-14 rounded-[20px] shadow-xl shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+          <svg class="w-14 h-14 rounded-[20px] shadow-xl shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="Novashot Luxury Crest">
             <defs>
               <linearGradient id="modal-lux-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#1e1b4b"/><stop offset="52%" stop-color="#5b21b6"/><stop offset="100%" stop-color="#db2777"/>
+                <stop offset="0%" stop-color="#1e1b4b"/>
+                <stop offset="52%" stop-color="#5b21b6"/>
+                <stop offset="100%" stop-color="#db2777"/>
               </linearGradient>
               <linearGradient id="modal-lux-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#ffafcc"/><stop offset="100%" stop-color="#9bf6ff"/>
+                <stop offset="0%" stop-color="#fef08a"/>
+                <stop offset="50%" stop-color="#ffafcc"/>
+                <stop offset="100%" stop-color="#9bf6ff"/>
               </linearGradient>
             </defs>
             <rect width="128" height="128" rx="30" fill="url(#modal-lux-bg)" stroke="url(#modal-lux-gold)" stroke-width="5"/>
@@ -65,12 +81,15 @@
             <circle cx="64" cy="64" r="8.5" fill="#ffffff"/>
             <circle cx="96" cy="32" r="5" fill="#fef08a"/>
           </svg>
-          <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight game-brand-title">Novashot</h1>
+          <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight game-brand-title">
+            Novashot
+          </h1>
         </div>
         <p id="modal-subtitle" class="text-xs sm:text-sm ui-subtitle font-semibold mt-2 max-w-lg tracking-wide">
           Part 1: Select your control hardware to calibrate precision targeting.
         </p>
 
+        <!-- Saved All-Time Records Strip -->
         <div id="saved-records-strip" class="mt-3 ios-glass-subcard transition-zone rounded-2xl px-5 py-2 flex flex-wrap items-center justify-center gap-5 sm:gap-7 text-xs font-extrabold">
           <span>🏆 Best Score: <strong id="menu-best-score" class="text-rose-400">0</strong></span>
           <span>⏱️ Best Time: <strong id="menu-best-time" class="text-indigo-400">00:00.0</strong></span>
@@ -78,56 +97,87 @@
         </div>
       </div>
 
-      <!-- STEP 1 -->
+      <!-- ================================================================= -->
+      <!-- STEP 1: DEVICE SELECTION ONLY                                     -->
+      <!-- ================================================================= -->
       <div id="init-step-1" class="relative z-10 space-y-5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Option A: Smartphone / Tablet (Touch) -->
           <button id="select-touch-btn" class="device-card-btn transition-zone rounded-[28px] p-6 text-left flex flex-col justify-between group h-full">
             <div>
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ffafcc] to-[#ffd6a5] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">📱</div>
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ffafcc] to-[#ffd6a5] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">
+                📱
+              </div>
               <h2 class="text-lg font-extrabold ui-title">Smartphone / Tablet</h2>
-              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">Ergonomic glass touch buttons for movement, rapid blaster fire, speed & biome controls.</p>
+              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">
+                Ergonomic glass touch buttons for movement, rapid blaster fire, speed & biome controls.
+              </p>
             </div>
             <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/15 px-2.5 py-1 rounded-full">Touch Controls</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/15 px-2.5 py-1 rounded-full">
+                Touch Controls
+              </span>
               <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar & Studio →</span>
             </div>
           </button>
 
+          <!-- Option B: Laptop / Desktop (Keyboard) -->
           <button id="select-desktop-btn" class="device-card-btn selected-device transition-zone rounded-[28px] p-6 text-left flex flex-col justify-between group h-full">
             <div>
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a0c4ff] to-[#bdb2ff] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">💻</div>
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a0c4ff] to-[#bdb2ff] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">
+                💻
+              </div>
               <h2 class="text-lg font-extrabold ui-title">Laptop / Desktop</h2>
-              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">Full keyboard controls (<span class="font-bold">← →</span> Move, <span class="font-bold">↑</span> Shoot, <span class="font-bold">P</span> Pause, <span class="font-bold">C</span> Cam, <span class="font-bold">E/B</span> Toggles).</p>
+              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">
+                Full keyboard controls (<span class="font-bold">← →</span> Move, <span class="font-bold">↑</span> Shoot, <span class="font-bold">P</span> Pause, <span class="font-bold">C</span> Cam, <span class="font-bold">E/B</span> Toggles).
+              </p>
             </div>
             <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/15 px-2.5 py-1 rounded-full">Keyboard + Click</span>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/15 px-2.5 py-1 rounded-full">
+                Keyboard + Click
+              </span>
               <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar & Studio →</span>
             </div>
           </button>
         </div>
+
+        <!-- Step 1 Next Action Button -->
         <button id="step-1-next-btn" class="launch-cta-btn w-full py-3.5 rounded-[22px] font-extrabold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2">
           <span>Next: 360° Avatar Maker & World Setup →</span>
         </button>
       </div>
 
-      <!-- STEP 2 -->
+      <!-- ================================================================= -->
+      <!-- STEP 2: 360° AVATAR MAKER, ENEMY DRESS & WORLD SETUP              -->
+      <!-- ================================================================= -->
       <div id="init-step-2" class="hidden relative z-10 space-y-4">
+
+        <!-- 360° Avatar Studio & Pastel Dress Designer -->
         <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h3 class="text-base sm:text-lg font-extrabold ui-title flex items-center gap-2"><span>🎨 360° Ranger Avatar Studio</span></h3>
+            <h3 class="text-base sm:text-lg font-extrabold ui-title flex items-center gap-2">
+              <span>🎨 360° Ranger Avatar Studio</span>
+            </h3>
             <span class="text-[11px] font-bold ui-subtitle">Drag room or slide to inspect 360°</span>
           </div>
+
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+            <!-- 360° Interactive Preview Room Canvas -->
             <div class="lg:col-span-5 flex flex-col items-center">
               <div id="avatar-preview-container" class="w-full h-56 sm:h-60 rounded-[24px] ios-glass transition-zone relative overflow-hidden cursor-grab active:cursor-grabbing flex items-center justify-center">
                 <canvas id="avatar-preview-canvas" class="w-full h-full block"></canvas>
                 <div class="absolute top-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
                   <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-black/25 text-white backdrop-blur-md">360° Studio</span>
-                  <button id="avatar-autospin-btn" type="button" class="pointer-events-auto ios-glass-pill px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">🔄 Auto-Spin: ON</button>
+                  <button id="avatar-autospin-btn" type="button" class="pointer-events-auto ios-glass-pill px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+                    🔄 Auto-Spin: ON
+                  </button>
                 </div>
               </div>
             </div>
+
+            <!-- Avatar Dress & Appearance Pickers -->
             <div class="lg:col-span-7 space-y-3.5">
+              <!-- Gender & Outfit Cut -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-1.5">Gender</span>
@@ -146,6 +196,8 @@
                   </select>
                 </div>
               </div>
+
+              <!-- Shirt Colour Picker (Multiple OR Single Shade Allowed) -->
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👕 Shirt / Top Shade (Pick 1 or Multiple Shades)</span>
@@ -153,6 +205,8 @@
                 </div>
                 <div class="grid grid-cols-8 gap-2" id="shirt-color-palette"></div>
               </div>
+
+              <!-- Pant Colour Picker (Strictly Single Shade) -->
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👖 Pant / Lower Dress (Pick 1 Colour)</span>
@@ -160,6 +214,8 @@
                 </div>
                 <div class="grid grid-cols-8 gap-2" id="pant-color-palette"></div>
               </div>
+
+              <!-- Skin Tone Picker -->
               <div>
                 <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-1.5">✨ Skin Tone</span>
                 <div class="grid grid-cols-8 gap-2" id="skin-tone-palette"></div>
@@ -168,7 +224,9 @@
           </div>
         </div>
 
+        <!-- World, Multi-Enemy & Enemy Dress Configuration -->
         <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5 space-y-4">
+          <!-- 1. Multi-Select Enemy Roster (Choose 1 or Multiple Enemies) -->
           <div>
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
               <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👾 Select Enemy Types (Choose 1 or Multiple in Single Game)</label>
@@ -183,14 +241,16 @@
             </div>
           </div>
 
+          <!-- 2. Enemy Dress Color Customizer -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">🧥 Customize Enemy Dress & Armor Palette</label>
-              <span id="enemy-dress-name" class="text-[10px] font-extrabold text-purple-400">Royal Cobalt & Mint</span>
+              <span id="enemy-dress-name" class="text-[10px] font-extrabold text-purple-400">Lavender Mint</span>
             </div>
             <div class="grid grid-cols-6 gap-2" id="enemy-dress-palette"></div>
           </div>
 
+          <!-- 3. Biome Selection -->
           <div>
             <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🌸 Select World Biome</label>
             <div id="step2-biome-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -202,6 +262,7 @@
             </div>
           </div>
 
+          <!-- 4. Day / Night Sky Phase & Camera & Theme -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="space-y-3">
               <div>
@@ -235,6 +296,7 @@
           </div>
         </div>
 
+        <!-- Step 2 Navigation & Prominent Launch Button -->
         <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
           <button id="step-2-back-btn" type="button" class="ios-glass-pill transition-zone w-full sm:w-auto px-6 py-3.5 rounded-[22px] text-xs sm:text-sm font-extrabold">
             ← Back to Device Selection
@@ -245,6 +307,7 @@
         </div>
       </div>
 
+      <!-- Quick Rules Footer -->
       <div class="ios-glass-subcard transition-zone rounded-2xl p-3.5 mt-4 text-xs ui-subtitle flex flex-wrap justify-around gap-3 font-bold text-center relative z-10">
         <span>🌀 Portal Wall-Wrap</span>
         <span>🍑 Damage Spawns Healing Fruit</span>
@@ -254,7 +317,9 @@
     </div>
   </div>
 
-  <!-- YOU DIED MODAL -->
+  <!-- ===================================================================== -->
+  <!-- 1B. "YOU DIED" MODAL OVERLAY                                          -->
+  <!-- ===================================================================== -->
   <div id="you-died-modal" class="modal-backdrop hidden-modal">
     <div class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-md w-full p-6 sm:p-8 text-center relative">
       <div class="absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-400/35 blur-3xl pointer-events-none"></div>
@@ -266,12 +331,23 @@
         </div>
         <span class="text-[11px] font-extrabold uppercase tracking-[0.28em] text-rose-400 block mb-1">PASTEL SHIELD DEPLETED</span>
         <h2 class="text-4xl sm:text-5xl font-black tracking-tight game-brand-title mb-2">YOU DIED</h2>
-        <p class="text-xs sm:text-sm ui-subtitle font-semibold mb-5">Your high score and survival records have been safely archived.</p>
+        <p class="text-xs sm:text-sm ui-subtitle font-semibold mb-5">
+          Your high score and survival records have been safely archived.
+        </p>
 
         <div class="ios-glass-subcard transition-zone rounded-2xl p-3.5 mb-6 grid grid-cols-3 gap-2 text-center">
-          <div><span class="text-[10px] font-bold uppercase ui-subtitle block">Run Score</span><span id="died-score-val" class="text-lg font-extrabold text-emerald-400">0</span></div>
-          <div><span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span><span id="died-best-val" class="text-lg font-extrabold text-amber-400">0</span></div>
-          <div><span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span><span id="died-time-val" class="text-lg font-extrabold text-sky-400">00:00</span></div>
+          <div>
+            <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Score</span>
+            <span id="died-score-val" class="text-lg font-extrabold text-emerald-400">0</span>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span>
+            <span id="died-best-val" class="text-lg font-extrabold text-amber-400">0</span>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span>
+            <span id="died-time-val" class="text-lg font-extrabold text-sky-400">00:00</span>
+          </div>
         </div>
 
         <div class="flex flex-col gap-3">
@@ -286,12 +362,15 @@
     </div>
   </div>
 
-  <!-- PAUSE MODAL -->
+  <!-- ===================================================================== -->
+  <!-- 2. DEDICATED PAUSE & WORLD STUDIO OVERLAY                             -->
+  <!-- ===================================================================== -->
   <div id="pause-modal" class="modal-backdrop hidden-modal">
     <div class="ios-glass transition-zone modal-fit-card rounded-[40px] max-w-xl w-full p-5 sm:p-8 relative">
       <div class="absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-300/30 blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
 
+      <!-- Header -->
       <div class="flex items-center justify-between gap-3 mb-4 relative z-10">
         <div>
           <span class="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-400 block">GAME PAUSED</span>
@@ -302,14 +381,29 @@
         </button>
       </div>
 
+      <!-- Live Session & Saved High-Score Telemetry -->
       <div class="ios-glass-subcard transition-zone rounded-[24px] p-3.5 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center relative z-10">
-        <div class="p-2 rounded-xl bg-white/10"><span class="text-[10px] font-bold uppercase ui-subtitle block">Current Score</span><span id="pause-curr-score" class="text-lg font-extrabold text-emerald-400">0</span></div>
-        <div class="p-2 rounded-xl bg-white/10"><span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span><span id="pause-best-score" class="text-lg font-extrabold text-amber-400">0</span></div>
-        <div class="p-2 rounded-xl bg-white/10"><span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span><span id="pause-curr-time" class="text-lg font-extrabold text-sky-400">00:00</span></div>
-        <div class="p-2 rounded-xl bg-white/10"><span class="text-[10px] font-bold uppercase ui-subtitle block">Best Time</span><span id="pause-best-time" class="text-lg font-extrabold text-purple-400">00:00</span></div>
+        <div class="p-2 rounded-xl bg-white/10">
+          <span class="text-[10px] font-bold uppercase ui-subtitle block">Current Score</span>
+          <span id="pause-curr-score" class="text-lg font-extrabold text-emerald-400">0</span>
+        </div>
+        <div class="p-2 rounded-xl bg-white/10">
+          <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span>
+          <span id="pause-best-score" class="text-lg font-extrabold text-amber-400">0</span>
+        </div>
+        <div class="p-2 rounded-xl bg-white/10">
+          <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span>
+          <span id="pause-curr-time" class="text-lg font-extrabold text-sky-400">00:00</span>
+        </div>
+        <div class="p-2 rounded-xl bg-white/10">
+          <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Time</span>
+          <span id="pause-best-time" class="text-lg font-extrabold text-purple-400">00:00</span>
+        </div>
       </div>
 
+      <!-- Environment & UI Controls inside Pause Screen -->
       <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5 space-y-4 relative z-10">
+        <!-- Biome Selector -->
         <div>
           <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🌸 Biome Environment</label>
           <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
@@ -321,6 +415,7 @@
           </div>
         </div>
 
+        <!-- Day / Night Sky Phase -->
         <div>
           <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">☀️ Day & Night Atmosphere</label>
           <div class="grid grid-cols-3 gap-2">
@@ -330,6 +425,7 @@
           </div>
         </div>
 
+        <!-- UI Theme (White vs Dark) & Multi-Visitor Wave -->
         <div class="space-y-3">
           <div>
             <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">✨ UI Glass Mode (Upper-Left ↘ Lower-Right)</label>
@@ -338,6 +434,7 @@
               <button data-theme="dark" class="pause-theme-btn ios-glass-pill transition-zone py-2.5 px-3 rounded-xl text-xs font-extrabold">🌙 Dark Mode</button>
             </div>
           </div>
+
           <div>
             <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">👾 Active Visitor Wave Roster (1 or Multiple)</label>
             <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
@@ -350,6 +447,7 @@
           </div>
         </div>
 
+        <!-- Camera Perspective Selector -->
         <div>
           <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🎥 Camera Perspective</label>
           <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
@@ -362,6 +460,7 @@
           </div>
         </div>
 
+        <!-- Speed Sliders / Step Controls -->
         <div class="grid grid-cols-2 gap-3 pt-1">
           <div class="ios-glass-subcard transition-zone rounded-2xl p-2.5 flex items-center justify-between">
             <span class="text-xs font-bold ui-title">👾 Spd: <strong id="pause-enemy-spd">1.0x</strong></span>
@@ -380,6 +479,7 @@
         </div>
       </div>
 
+      <!-- Bottom Actions: Resume with 3s Countdown OR Save & Return to Main Menu -->
       <div class="flex flex-col sm:flex-row gap-3 mt-5 relative z-10">
         <button id="pause-main-menu-btn" class="ios-glass-pill transition-zone py-3.5 px-5 rounded-[22px] text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2">
           <span>🏠 Save & Main Menu</span>
@@ -391,35 +491,58 @@
     </div>
   </div>
 
-  <!-- COUNTDOWN OVERLAY -->
+  <!-- ===================================================================== -->
+  <!-- 3. SMOOTH ROTATING CIRCULAR COUNTDOWN OVERLAY                         -->
+  <!-- ===================================================================== -->
   <div id="countdown-overlay">
     <div class="ios-glass transition-zone countdown-glass-circle">
+      <!-- SVG Circular Frame & Rotating Outer Rim -->
       <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 200 200">
         <defs>
           <linearGradient id="cd-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff758f" /><stop offset="50%" stop-color="#bdb2ff" /><stop offset="100%" stop-color="#9bf6ff" />
+            <stop offset="0%" stop-color="#ff758f" />
+            <stop offset="50%" stop-color="#bdb2ff" />
+            <stop offset="100%" stop-color="#9bf6ff" />
           </linearGradient>
         </defs>
+        <!-- Subtle Stopwatch Tick Dial Ring -->
         <circle cx="100" cy="100" r="68" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3.5" stroke-dasharray="2 6.9" />
+        <!-- Subtle Inner Track -->
         <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="5" />
+        <!-- Smoothly Depleting Progress Arc -->
         <circle id="countdown-progress-arc" cx="100" cy="100" r="76" fill="none" stroke="url(#cd-grad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="477.5" stroke-dashoffset="0" />
+        <!-- Outer Rotating Rim Group (Rotates 360 deg per second smoothly) -->
         <g id="countdown-outer-rim" style="transform-origin: 100px 100px;">
           <circle cx="100" cy="100" r="90" fill="none" stroke="url(#cd-grad)" stroke-width="4" stroke-dasharray="28 19" stroke-linecap="round" opacity="0.9" />
+          <!-- Leading Orbital Beacon Dot at Top of Rim -->
           <circle cx="100" cy="10" r="6" fill="#ff758f" stroke="#ffffff" stroke-width="2" />
           <circle cx="100" cy="190" r="4.5" fill="#9bf6ff" stroke="#ffffff" stroke-width="1.5" />
         </g>
       </svg>
+
+      <!-- Center Animated Numeral & Live Millisecond Countdown Stopwatch -->
       <div class="flex flex-col items-center justify-center text-center relative z-10">
         <span id="countdown-numeral">3</span>
-        <span id="countdown-ms-stopwatch" class="text-xs font-extrabold tabular-nums tracking-wider text-rose-400 mt-0.5">03.00s</span>
-        <span id="countdown-sublabel" class="text-[9px] font-extrabold uppercase tracking-[0.2em] ui-subtitle mt-0.5">GET READY</span>
+        <span id="countdown-ms-stopwatch" class="text-xs font-extrabold tabular-nums tracking-wider text-rose-400 mt-0.5">
+          03.00s
+        </span>
+        <span id="countdown-sublabel" class="text-[9px] font-extrabold uppercase tracking-[0.2em] ui-subtitle mt-0.5">
+          GET READY
+        </span>
       </div>
     </div>
   </div>
 
-  <!-- LIVE HUD ROOT -->
-  <div id="live-hud-root" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between">
+  <!-- ===================================================================== -->
+  <!-- 4. LIVE HUD & INTERACTIVE CONTROL LAYER                               -->
+  <!-- ===================================================================== -->
+  <div id="live-hud-root" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-2.5 sm:p-5">
+
+    <!-- TOP REGION: UNIFIED ANNOUNCEMENT+UNHIDE CAPSULE ON VERY TOP + UPPERMOST UI + ALIGNED LEFT/RIGHT UI -->
     <div id="hud-top-stack" class="w-full flex flex-col items-center">
+
+      <!-- 0) UNIFIED CENTRALIZED UNHIDE & ANNOUNCEMENT CAPSULE -->
+      <!-- Centralizes Unhide button when no announcement; merges into 1 unit when announcement appears; re-centralizes when announcement disappears -->
       <div id="top-announcement-row" class="w-full flex items-center justify-center pointer-events-none z-30">
         <div id="top-unified-capsule" class="ios-glass transition-zone shadow-xl max-w-[95vw]">
           <div id="toast-segment" class="text-xs sm:text-sm font-extrabold tracking-wide ui-title">
@@ -435,16 +558,24 @@
         </div>
       </div>
 
+      <!-- TOP BAR: Uppermost UI at top + Left & Right UI row underneath -->
       <div id="hud-top-bar" class="w-full flex flex-col items-center">
+
+        <!-- 1) UPPERMOST UI: App Brand, Controls & Live Cycle Countdown Stopwatch -->
         <div id="hud-uppermost-row" class="w-full flex justify-center">
           <div id="hud-brand-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-4 py-2.5 flex items-center gap-3.5 pointer-events-auto max-w-full">
-            <svg class="w-11 h-11 rounded-2xl shadow-lg shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+            <!-- Luxurious Shooter Game Icon SVG -->
+            <svg class="w-11 h-11 rounded-2xl shadow-lg shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="Novashot Game Icon">
               <defs>
                 <linearGradient id="hud-lux-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#1e1b4b"/><stop offset="52%" stop-color="#5b21b6"/><stop offset="100%" stop-color="#db2777"/>
+                  <stop offset="0%" stop-color="#1e1b4b"/>
+                  <stop offset="52%" stop-color="#5b21b6"/>
+                  <stop offset="100%" stop-color="#db2777"/>
                 </linearGradient>
                 <linearGradient id="hud-lux-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#ffafcc"/><stop offset="100%" stop-color="#9bf6ff"/>
+                  <stop offset="0%" stop-color="#fef08a"/>
+                  <stop offset="50%" stop-color="#ffafcc"/>
+                  <stop offset="100%" stop-color="#9bf6ff"/>
                 </linearGradient>
               </defs>
               <rect width="128" height="128" rx="30" fill="url(#hud-lux-bg)" stroke="url(#hud-lux-gold)" stroke-width="5"/>
@@ -454,16 +585,42 @@
               <path d="M38 74 L55 46 L82 46 L94 58 L75 82 L44 82 Z" fill="url(#hud-lux-gold)"/>
               <circle cx="64" cy="64" r="8.5" fill="#ffffff"/>
             </svg>
+
             <div class="overflow-hidden">
               <div class="flex items-center gap-2 flex-wrap mb-1">
                 <h1 class="text-base sm:text-lg font-extrabold tracking-tight game-brand-title mr-1">Novashot</h1>
-                <button id="hud-pause-btn" title="Pause / World Settings (P)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">⏸️ <span id="hud-pause-label">Pause</span></button>
-                <button id="hud-cam-btn" title="Switch Camera View (C)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">🎥 <span id="hud-cam-label">Classic</span></button>
-                <button id="hud-theme-btn" title="Switch White / Dark Glass UI" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">☀️ <span id="hud-theme-label">White</span></button>
-                <button id="mute-audio-btn" title="Toggle Synthesized Audio" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">🔊 <span id="audio-state-label">Audio</span></button>
-                <button id="cycle-mode-btn" title="Sky Phase Mode" class="ios-glass-pill transition-zone px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">🌅 <span id="cycle-mode-label">Dynamic</span></button>
-                <button data-hide-target="hud-brand-card" title="Hide Brand & Controls Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0 ml-0.5">✕</button>
+
+                <!-- Pause / Resume Button -->
+                <button id="hud-pause-btn" title="Pause / World Settings (P)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                  ⏸️ <span id="hud-pause-label">Pause</span>
+                </button>
+
+                <!-- Camera Perspective Button -->
+                <button id="hud-cam-btn" title="Switch Camera View (C)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                  🎥 <span id="hud-cam-label">Classic</span>
+                </button>
+
+                <!-- White / Dark UI Theme Button -->
+                <button id="hud-theme-btn" title="Switch White / Dark Glass UI" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                  ☀️ <span id="hud-theme-label">White</span>
+                </button>
+
+                <!-- Audio Mute Button -->
+                <button id="mute-audio-btn" title="Toggle Synthesized Audio" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                  🔊 <span id="audio-state-label">Audio</span>
+                </button>
+
+                <!-- Sky Phase Mode Button -->
+                <button id="cycle-mode-btn" title="Sky Phase Mode" class="ios-glass-pill transition-zone px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                  🌅 <span id="cycle-mode-label">Dynamic</span>
+                </button>
+
+                <!-- Hide Brand Panel Individually -->
+                <button data-hide-target="hud-brand-card" title="Hide Brand & Controls Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0 ml-0.5">
+                  ✕
+                </button>
               </div>
+
               <div class="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider ui-subtitle">
                 <span id="cycle-readout" class="truncate">Day 1 • Pastel Morning</span>
                 <span>•</span>
@@ -475,25 +632,36 @@
           </div>
         </div>
 
+        <!-- 2) ALIGNED LEFT UI & RIGHT UI ROW -->
         <div id="hud-lr-row" class="w-full flex items-stretch">
           <div id="lr-spacer-left" class="lr-flex-spacer" style="flex-grow: 0;"></div>
 
+          <!-- LEFT UI: Health & Collectibles Card -->
           <div id="hud-health-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-4 py-2.5 w-full sm:w-auto min-w-[235px] min-h-[78px] flex flex-col justify-between pointer-events-auto">
             <div class="flex justify-between items-center gap-2 text-[11px] font-extrabold tracking-wider uppercase mb-1.5 ui-title">
               <span>♥ Pastel Shield</span>
               <div class="flex items-center gap-1.5">
                 <span id="health-text">6 / 6 HITS (3.0 ♥)</span>
-                <button data-hide-target="hud-health-card" title="Hide Shield & Collectibles Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0">✕</button>
+                <button data-hide-target="hud-health-card" title="Hide Shield & Collectibles Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0">
+                  ✕
+                </button>
               </div>
             </div>
             <div class="grid grid-cols-6 gap-1" id="health-bar">
-              <div class="health-seg active"></div><div class="health-seg active"></div><div class="health-seg active"></div><div class="health-seg active"></div><div class="health-seg active"></div><div class="health-seg active"></div>
+              <div class="health-seg active"></div>
+              <div class="health-seg active"></div>
+              <div class="health-seg active"></div>
+              <div class="health-seg active"></div>
+              <div class="health-seg active"></div>
+              <div class="health-seg active"></div>
             </div>
             <div class="flex justify-between items-center text-xs font-bold mt-2 ui-title">
               <span>🍑 Fruit: <strong id="fruits-count" class="text-rose-500">0</strong></span>
               <span>⚡ Ammo: <strong id="ammo-count" class="text-amber-500">40</strong></span>
               <span>🎯 Hits: <strong id="kills-count" class="text-sky-500">0</strong></span>
             </div>
+
+            <!-- Exclusive Fixed Swivel Mode Reload & Core Stability Bar -->
             <div id="swivel-core-bar-wrap" class="hidden mt-2 pt-1.5 border-t border-white/30 flex-col gap-1">
               <div class="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
                 <span class="text-sky-400 flex items-center gap-1">🔄 Swivel Core (Press R)</span>
@@ -507,9 +675,16 @@
 
           <div id="lr-spacer-middle" class="lr-flex-spacer" style="flex-grow: 1; min-width: 10px;"></div>
 
+          <!-- RIGHT UI: Score, Time Stopwatch & Mode Telemetry Card -->
           <div id="hud-score-card" class="ios-glass transition-zone hud-collapsible-top rounded-[24px] px-4 py-2.5 min-h-[78px] flex items-center gap-3.5 sm:gap-5 pointer-events-auto">
-            <div class="flex flex-col"><span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Score</span><span id="score-val" class="text-xl sm:text-2xl font-extrabold text-emerald-500 tabular-nums leading-tight">0</span></div>
-            <div class="flex flex-col"><span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best</span><span id="high-score-val" class="text-xl sm:text-2xl font-extrabold text-amber-500 tabular-nums leading-tight">0</span></div>
+            <div class="flex flex-col">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Score</span>
+              <span id="score-val" class="text-xl sm:text-2xl font-extrabold text-emerald-500 tabular-nums leading-tight">0</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best</span>
+              <span id="high-score-val" class="text-xl sm:text-2xl font-extrabold text-amber-500 tabular-nums leading-tight">0</span>
+            </div>
             <div class="flex flex-col">
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">⏱️ Stopwatch</span>
               <span id="score-card-timer-val" class="text-base sm:text-lg font-extrabold text-indigo-500 tabular-nums leading-tight">00:00.0</span>
@@ -519,49 +694,84 @@
               <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best Time</span>
               <span id="hud-best-time-val" class="text-base sm:text-lg font-extrabold text-purple-500 tabular-nums leading-tight">00:00.0</span>
             </div>
-            <div class="hidden md:flex flex-col"><span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Visitor (E)</span><span id="enemy-mode-val" class="text-sm font-extrabold text-rose-500">Zombies</span></div>
-            <div class="hidden md:flex flex-col"><span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">World (B)</span><span id="biome-val" class="text-sm font-extrabold text-sky-500">Grass</span></div>
-            <button data-hide-target="hud-score-card" title="Hide Score & Telemetry Panel" class="hide-ui-chip ios-glass-pill transition-zone self-start">✕</button>
+            <div class="hidden md:flex flex-col">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Visitor (E)</span>
+              <span id="enemy-mode-val" class="text-sm font-extrabold text-rose-500">Zombies</span>
+            </div>
+            <div class="hidden md:flex flex-col">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">World (B)</span>
+              <span id="biome-val" class="text-sm font-extrabold text-sky-500">Grass</span>
+            </div>
+            <button data-hide-target="hud-score-card" title="Hide Score & Telemetry Panel" class="hide-ui-chip ios-glass-pill transition-zone self-start">
+              ✕
+            </button>
           </div>
 
           <div id="lr-spacer-right" class="lr-flex-spacer" style="flex-grow: 0;"></div>
         </div>
+
       </div>
+
     </div>
 
-    <!-- BOTTOM CONTROLS -->
+    <!-- BOTTOM CONTROLS: ADAPTS TO TOUCH OR DESKTOP MODE (Anchored at base of screen) -->
     <div class="w-full flex flex-col gap-2.5 mt-auto">
+
+      <!-- =============================================================== -->
+      <!-- A) TOUCH CONTROLS (Shown in Smartphone / Tablet Mode)           -->
+      <!-- Touch controls cannot be hidden so mobile players never lose pad -->
+      <!-- =============================================================== -->
       <div id="touch-controls-layer" class="hidden w-full flex-col gap-3 pointer-events-auto">
+        <!-- Quick Touch Action Bar for Speeds & Toggles -->
         <div class="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2">
+          <!-- Enemy Speed A/D -->
           <div class="ios-glass transition-zone rounded-2xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-bold ui-title">
             <span>👾 Spd: <strong id="touch-enemy-spd">1.0x</strong></span>
             <button id="btn-enemy-slower" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">−</button>
             <button id="btn-enemy-faster" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">+</button>
           </div>
+
+          <!-- Day/Night Speed W/S -->
           <div class="ios-glass transition-zone rounded-2xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-bold ui-title">
             <span>☀️ Sky: <strong id="touch-cycle-spd">1.0x</strong></span>
             <button id="btn-cycle-slower" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">−</button>
             <button id="btn-cycle-faster" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">+</button>
           </div>
-          <button id="btn-toggle-enemy" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">👾 <span id="touch-enemy-label">Zombies</span></button>
-          <button id="btn-toggle-biome" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">🌸 <span id="touch-biome-label">Grass</span></button>
-          <button id="btn-toggle-cam" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">🎥 <span id="touch-cam-label">Classic</span></button>
+
+          <!-- Enemy, Biome & Cam Switchers -->
+          <button id="btn-toggle-enemy" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
+            👾 <span id="touch-enemy-label">Zombies</span>
+          </button>
+          <button id="btn-toggle-biome" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
+            🌸 <span id="touch-biome-label">Grass</span>
+          </button>
+          <button id="btn-toggle-cam" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
+            🎥 <span id="touch-cam-label">Classic</span>
+          </button>
         </div>
 
+        <!-- Ergonomic Bottom Thumb Pads: Left/Right Movement & Right Zoom + Fire Buttons -->
         <div class="flex justify-between items-end w-full px-1 sm:px-4 pb-1 gap-2">
           <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <button id="touch-left-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">◀</button>
-            <button id="touch-right-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">▶</button>
+            <button id="touch-left-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">
+              ◀
+            </button>
+            <button id="touch-right-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">
+              ▶
+            </button>
           </div>
+
           <div class="flex items-end gap-2.5 sm:gap-3.5 shrink-0">
             <button id="touch-reload-btn" type="button" class="touch-btn transition-zone hidden w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex-col items-center justify-center border-emerald-400/80">
               <span class="text-lg sm:text-xl leading-none">🔄</span>
               <span id="touch-reload-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Reload</span>
             </button>
+
             <button id="touch-magnify-btn" type="button" class="touch-btn transition-zone w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex flex-col items-center justify-center">
               <span class="text-lg sm:text-xl leading-none">🔍</span>
               <span id="touch-magnify-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Zoom</span>
             </button>
+
             <button id="touch-fire-btn" class="fire-btn w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-white shadow-xl shrink-0">
               <span class="text-2xl sm:text-3xl leading-none">⚡</span>
               <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Shoot</span>
@@ -570,10 +780,20 @@
         </div>
       </div>
 
+      <!-- =============================================================== -->
+      <!-- B) KEYBOARD DOCK (Shown in Laptop / Desktop Mode)               -->
+      <!-- Includes its own individual Hide button                         -->
+      <!-- =============================================================== -->
       <div id="desktop-controls-layer" class="hidden w-full justify-center pointer-events-auto">
         <div id="hud-desktop-dock" class="ios-glass transition-zone hud-collapsible-bottom rounded-[26px] px-4 py-2.5 flex flex-wrap justify-center items-center gap-2 sm:gap-3 text-xs font-bold ui-title max-w-full">
-          <div class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/10 shrink-0"><span class="kbd-badge">←</span><span class="kbd-badge">→</span><span>Move</span></div>
-          <button id="desk-shoot-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">↑</span><span>Blaster</span></button>
+          <div class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/10 shrink-0">
+            <span class="kbd-badge">←</span><span class="kbd-badge">→</span>
+            <span>Move</span>
+          </div>
+          <button id="desk-shoot-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">↑</span>
+            <span>Blaster</span>
+          </button>
           <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 shrink-0">
             <button id="desk-a-btn" class="kbd-badge cursor-pointer hover:scale-105">A</button>
             <button id="desk-d-btn" class="kbd-badge cursor-pointer hover:scale-105">D</button>
@@ -584,19 +804,41 @@
             <button id="desk-s-btn" class="kbd-badge cursor-pointer hover:scale-105">S</button>
             <span>Sky: <strong id="cycle-speed-ui" class="text-amber-500">1.0x</strong></span>
           </div>
-          <button id="desk-e-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">E</span><span>Visitor</span></button>
-          <button id="desk-b-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">B</span><span>Biome</span></button>
-          <button id="desk-c-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">C</span><span>Cam</span></button>
-          <button id="desk-m-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">M</span><span>Zoom: <strong id="desk-zoom-ui" class="text-sky-400">OFF</strong></span></button>
-          <button id="desk-r-btn" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 transition cursor-pointer shrink-0"><span class="kbd-badge">R</span><span>Reload & ♥: <strong id="desk-reload-ui" class="text-emerald-400">15.0s</strong></span></button>
-          <button id="desk-p-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0"><span class="kbd-badge">P</span><span>Pause</span></button>
-          <button data-hide-target="hud-desktop-dock" title="Hide Keyboard Controls Dock" class="hide-ui-chip ios-glass-pill transition-zone ml-1">✕</button>
+          <button id="desk-e-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">E</span>
+            <span>Visitor</span>
+          </button>
+          <button id="desk-b-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">B</span>
+            <span>Biome</span>
+          </button>
+          <button id="desk-c-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">C</span>
+            <span>Cam</span>
+          </button>
+          <button id="desk-m-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">M</span>
+            <span>Zoom: <strong id="desk-zoom-ui" class="text-sky-400">OFF</strong></span>
+          </button>
+          <button id="desk-r-btn" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">R</span>
+            <span>Reload & ♥: <strong id="desk-reload-ui" class="text-emerald-400">15.0s</strong></span>
+          </button>
+          <button id="desk-p-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
+            <span class="kbd-badge">P</span>
+            <span>Pause</span>
+          </button>
+          <button data-hide-target="hud-desktop-dock" title="Hide Keyboard Controls Dock" class="hide-ui-chip ios-glass-pill transition-zone ml-1">
+            ✕
+          </button>
         </div>
       </div>
+
     </div>
   </div>
 
+  <!-- Three.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="./main.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>
