@@ -3,972 +3,690 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Novashot — 3D Pastel Blaster Arcade</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Cdefs%3E%3ClinearGradient id='luxBg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%231e1b4b'/%3E%3Cstop offset='50%25' stop-color='%234c1d95'/%3E%3Cstop offset='100%25' stop-color='%23be185d'/%3E%3C/linearGradient%3E%3ClinearGradient id='goldTrim' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fef08a'/%3E%3Cstop offset='50%25' stop-color='%23f472b6'/%3E%3Cstop offset='100%25' stop-color='%2393c5fd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='128' height='128' rx='32' fill='url(%23luxBg)' stroke='url(%23goldTrim)' stroke-width='5'/%3E%3Ccircle cx='64' cy='64' r='42' fill='none' stroke='url(%23goldTrim)' stroke-width='3' stroke-dasharray='14 8'/%3E%3Ccircle cx='64' cy='64' r='28' fill='none' stroke='%23ffffff' stroke-opacity='0.45' stroke-width='2'/%3E%3Cpath d='M64 12 L64 32 M64 96 L64 116 M12 64 L32 64 M96 64 L116 64' stroke='url(%23goldTrim)' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M42 74 L58 46 L74 46 L88 58 L70 82 L46 82 Z' fill='url(%23goldTrim)'/%3E%3Ccircle cx='64' cy='64' r='9' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <title>AETHERIA: Sovereign Shatter Chess — MADE BY SOU.</title>
+
+  <!-- Custom Pastel SVG App Icon / Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%232e294e'/%3E%3Cstop offset='50%25' stop-color='%231e1b2e'/%3E%3Cstop offset='100%25' stop-color='%233d315b'/%3E%3C/linearGradient%3E%3ClinearGradient id='pastel' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23fde2e4'/%3E%3Cstop offset='50%25' stop-color='%23e2ece9'/%3E%3Cstop offset='100%25' stop-color='%23cddafd'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='30' fill='url(%23bg)' stroke='url(%23pastel)' stroke-width='4'/%3E%3Cpath d='M60 18 L72 40 L96 32 L84 68 L36 68 L24 32 L48 40 Z' fill='url(%23pastel)'/%3E%3Crect x='32' y='74' width='56' height='10' rx='5' fill='url(%23pastel)'/%3E%3Crect x='26' y='88' width='68' height='12' rx='6' fill='url(%23pastel)'/%3E%3Ccircle cx='60' cy='14' r='5' fill='%23fff'/%3E%3C/svg%3E" />
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body class="theme-light gfx-hd" data-gfx-mode="hd">
+<body data-theme-mode="dark" data-perf-mode="high">
 
-  <!-- Smooth Hardware-Accelerated Theme Sweep Layer (Prevents Dark/White Mode Glitching) -->
-  <div id="smooth-theme-curtain" aria-hidden="true"></div>
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
 
-  <!-- 3D Pastel World Canvas -->
-  <canvas id="game-canvas"></canvas>
+  <!-- Soft Vignette Overlay -->
+  <div class="sanctuary-vignette"></div>
 
-  <!-- Live Bullet Shot Target Pointer Reticle -->
-  <div id="bullet-aim-pointer" aria-hidden="true">
-    <svg viewBox="0 0 64 64" class="w-full h-full">
-      <circle id="aim-reticle-outer" cx="32" cy="32" r="22" fill="none" stroke="#ff758f" stroke-width="2.5" stroke-dasharray="10 6" />
-      <circle id="aim-reticle-inner" cx="32" cy="32" r="10" fill="none" stroke="#fdffb6" stroke-width="2" />
-      <path d="M32 4 L32 14 M32 50 L32 60 M4 32 L14 32 M50 32 L60 32" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" />
-      <circle id="aim-reticle-dot" cx="32" cy="32" r="3.5" fill="#ff758f" />
-      <text id="aim-reticle-zoom-tag" x="32" y="62" text-anchor="middle" fill="#38bdf8" font-size="8.5" font-weight="900" class="hidden">2.5× ZOOM</text>
-    </svg>
-  </div>
+  <!-- Smooth Dark-to-White & Realm Crossfade Transition Veil -->
+  <div id="theme-transition-veil" class="theme-transition-veil" aria-hidden="true"></div>
 
-  <!-- ===================================================================== -->
-  <!-- 1. TWO-STEP GAME INITIATION MODAL                                     -->
-  <!-- ===================================================================== -->
-  <div id="device-modal" class="modal-backdrop scroll-lag-free">
-    <div id="initiation-card" class="ios-glass transition-zone modal-fit-card ui-scalable-modal rounded-[40px] max-w-3xl w-full p-5 sm:p-8 relative">
-      <!-- Decorative Ambient Glow Orbs -->
-      <div class="ambient-glow-orb absolute -top-20 -right-20 w-52 h-52 rounded-full bg-pink-300/35 blur-3xl pointer-events-none"></div>
-      <div class="ambient-glow-orb absolute -bottom-20 -left-20 w-52 h-52 rounded-full bg-indigo-300/35 blur-3xl pointer-events-none"></div>
+  <!-- =========================================================================
+       STARTING LAUNCHER MODAL
+       ========================================================================= -->
+  <div id="start-screen-modal" class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-slate-950/40 backdrop-blur-md transition-opacity duration-300 overflow-y-auto smooth-scroll-container">
+    <div class="spatial-modal rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 max-w-xl w-full my-auto text-center relative overflow-hidden max-h-[94dvh] overflow-y-auto smooth-scroll-container">
 
-      <!-- Top Header & Step Indicator + Theme Switcher -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-4 relative z-10">
-        <span class="text-[11px] font-extrabold uppercase tracking-[0.26em] ios-glass-pill transition-zone px-3.5 py-1 rounded-full">
-          MADE BY SOU.
-        </span>
+      <!-- Soft Pastel Ambient Orbs -->
+      <div class="pointer-events-none absolute -top-20 -left-20 w-52 h-52 rounded-full bg-pink-200/20 blur-3xl ambient-orb"></div>
+      <div class="pointer-events-none absolute -bottom-20 -right-20 w-52 h-52 rounded-full bg-sky-200/20 blur-3xl ambient-orb"></div>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-          <!-- Graphics Definition Quick Status Pill -->
-          <button id="init-gfx-quick-pill" type="button" class="ios-glass-pill transition-zone px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5" title="Toggle High / Low Definition Mode">
-            <span id="init-gfx-pill-icon">✨</span>
-            <span id="init-gfx-pill-text">HD Mode</span>
-          </button>
-
-          <!-- Step Indicator Pills -->
-          <div class="ios-glass-subcard transition-zone px-3 py-1 rounded-full flex items-center gap-2 text-xs font-extrabold">
-            <span id="step-dot-1" class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
-            <span id="step-label-text">Step 1 of 2</span>
-            <span id="step-dot-2" class="w-2.5 h-2.5 rounded-full bg-slate-400/40"></span>
-          </div>
-
-          <!-- Instant Theme Switcher Button -->
-          <button id="init-theme-toggle-btn" class="ios-glass-pill transition-zone px-3.5 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5" title="Switch White / Dark UI">
-            <span id="init-theme-icon">☀️</span>
-            <span id="init-theme-text">White UI</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Brand Title with Luxurious Shooter Icon & Strict Black/White Title -->
-      <div class="flex flex-col items-center text-center mb-5 relative z-10">
-        <div class="flex items-center justify-center gap-3.5">
-          <svg class="w-14 h-14 rounded-[20px] shadow-xl shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="Novashot Luxury Crest">
+      <!-- Custom 3D-Styled App Emblem Icon -->
+      <div class="relative mx-auto w-14 h-14 sm:w-20 sm:h-20 mb-2 animate-float-icon">
+        <div class="w-full h-full rounded-[20px] sm:rounded-[22px] spatial-surface flex items-center justify-center border border-orange-200/50">
+          <svg class="w-9 h-9 sm:w-12 sm:h-12" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="modal-lux-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#1e1b4b"/>
-                <stop offset="52%" stop-color="#5b21b6"/>
-                <stop offset="100%" stop-color="#db2777"/>
+              <linearGradient id="emblemPastel" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fff1f2" />
+                <stop offset="50%" stop-color="#fed7aa" />
+                <stop offset="100%" stop-color="#f9a8d4" />
               </linearGradient>
-              <linearGradient id="modal-lux-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#fef08a"/>
-                <stop offset="50%" stop-color="#ffafcc"/>
-                <stop offset="100%" stop-color="#9bf6ff"/>
+              <linearGradient id="emblemSky" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#bae6fd" />
+                <stop offset="100%" stop-color="#e9d5ff" />
               </linearGradient>
             </defs>
-            <rect width="128" height="128" rx="30" fill="url(#modal-lux-bg)" stroke="url(#modal-lux-gold)" stroke-width="5"/>
-            <circle cx="64" cy="64" r="42" fill="none" stroke="url(#modal-lux-gold)" stroke-width="2.8" stroke-dasharray="14 8"/>
-            <circle cx="64" cy="64" r="28" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
-            <path d="M64 11 L64 29 M64 99 L64 117 M11 64 L29 64 M99 64 L117 64" stroke="url(#modal-lux-gold)" stroke-width="4" stroke-linecap="round"/>
-            <path d="M38 74 L55 46 L82 46 L94 58 L75 82 L44 82 Z" fill="url(#modal-lux-gold)"/>
-            <circle cx="64" cy="64" r="8.5" fill="#ffffff"/>
-            <circle cx="96" cy="32" r="5" fill="#fef08a"/>
+            <circle cx="60" cy="60" r="50" stroke="url(#emblemPastel)" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.75" />
+            <path d="M60 16 L74 42 L102 30 L86 72 L34 72 L18 30 L46 42 Z" fill="url(#emblemPastel)" />
+            <polygon points="60,32 67,48 60,64 53,48" fill="url(#emblemSky)" />
+            <rect x="30" y="78" width="60" height="10" rx="5" fill="url(#emblemPastel)" />
+            <rect x="22" y="92" width="76" height="12" rx="6" fill="url(#emblemPastel)" />
+            <circle cx="60" cy="11" r="5" fill="#ffffff" />
           </svg>
-          <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight game-brand-title">
-            Novashot
-          </h1>
         </div>
-        <p id="modal-subtitle" class="text-xs sm:text-sm ui-subtitle font-semibold mt-2 max-w-lg tracking-wide">
-          Part 1: Select your control hardware &amp; graphics definition to calibrate precision targeting.
-        </p>
-
-        <!-- Saved All-Time Records Strip + Persistent Diamonds & Special Shield Bank -->
-        <div id="saved-records-strip" class="mt-3 ios-glass-subcard transition-zone rounded-2xl px-5 py-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-extrabold">
-          <span>🏆 Best Score: <strong id="menu-best-score" class="text-rose-400">0</strong></span>
-          <span>⏱️ Best Time: <strong id="menu-best-time" class="text-indigo-400">00:00.0</strong></span>
-          <span>☀️ Max Days: <strong id="menu-best-days" class="text-amber-400">1</strong></span>
-          <span>💎 Stored Diamonds: <strong id="menu-diamonds-bank" class="text-cyan-400">0</strong></span>
-          <span>🛡️ Aegis Shields: <strong id="menu-shields-bank" class="text-emerald-400">0</strong></span>
-        </div>
+        <span class="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase bg-gradient-to-r from-orange-200 to-pink-200 text-slate-900 shadow">3D</span>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- STEP 1: DEVICE SELECTION + HIGH / LOW DEFINITION MODE SELECTION   -->
-      <!-- ================================================================= -->
-      <div id="init-step-1" class="relative z-10 space-y-5">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Option A: Smartphone / Tablet (Touch) -->
-          <button id="select-touch-btn" class="device-card-btn transition-zone rounded-[28px] p-6 text-left flex flex-col justify-between group h-full">
-            <div>
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ffafcc] to-[#ffd6a5] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">
-                📱
-              </div>
-              <h2 class="text-lg font-extrabold ui-title">Smartphone / Tablet</h2>
-              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">
-                Ergonomic glass touch buttons for movement, rapid blaster fire, speed &amp; biome controls.
-              </p>
-            </div>
-            <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/15 px-2.5 py-1 rounded-full">
-                Touch Controls
-              </span>
-              <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar &amp; Studio →</span>
-            </div>
-          </button>
+      <!-- Title & Attribution -->
+      <h1 class="font-gothic text-xl sm:text-3xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-rose-100 via-orange-100 to-sky-100">
+        AETHERIA
+      </h1>
+      <p class="text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase text-sky-100/80 mt-0.5">
+        Sovereign Shatter Chess
+      </p>
 
-          <!-- Option B: Laptop / Desktop (Keyboard) -->
-          <button id="select-desktop-btn" class="device-card-btn selected-device transition-zone rounded-[28px] p-6 text-left flex flex-col justify-between group h-full">
-            <div>
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a0c4ff] to-[#bdb2ff] flex items-center justify-center text-2xl shadow-sm border border-white mb-3.5 group-hover:scale-110 transition-transform">
-                💻
-              </div>
-              <h2 class="text-lg font-extrabold ui-title">Laptop / Desktop</h2>
-              <p class="text-xs ui-subtitle font-medium mt-1.5 leading-relaxed">
-                Full keyboard controls (<span class="font-bold">← →</span> Move, <span class="font-bold">↑</span> Shoot, <span class="font-bold">P</span> Pause, <span class="font-bold">C</span> Cam, <span class="font-bold">E/B</span> Toggles).
-              </p>
-            </div>
-            <div class="mt-5 flex items-center justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-500 bg-indigo-500/15 px-2.5 py-1 rounded-full">
-                Keyboard + Click
-              </span>
-              <span class="text-xs font-extrabold ui-title group-hover:translate-x-1 transition-transform">Avatar &amp; Studio →</span>
-            </div>
-          </button>
-        </div>
-
-        <!-- 1st Initiation Screen: High Definition vs Low Definition (2GB RAM Smooth Mode) Selector -->
-        <div id="init-graphics-mode-panel" class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <span class="text-[10px] font-extrabold uppercase tracking-[0.22em] text-sky-400 block">GRAPHICS &amp; MEMORY ENGINE</span>
-              <h3 class="text-sm sm:text-base font-extrabold ui-title">Choose Visual Definition Mode</h3>
-            </div>
-            <span id="gfx-selected-badge" class="text-[11px] font-extrabold px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 border border-sky-400/30">
-              ✨ High Definition Active
-            </span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <!-- High Definition Option -->
-            <button id="select-hd-btn" type="button" data-gfx="hd" class="gfx-card-btn device-card-btn selected-device transition-zone rounded-[24px] p-4 text-left flex flex-col justify-between group">
-              <div>
-                <div class="flex items-center justify-between gap-2 mb-2">
-                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#a0c4ff] to-[#ffafcc] flex items-center justify-center text-xl shadow-sm border border-white">
-                    ✨
-                  </div>
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-sky-500 bg-sky-500/15 px-2.5 py-0.5 rounded-full">
-                    4GB+ RAM Recommended
-                  </span>
-                </div>
-                <h4 class="text-sm sm:text-base font-extrabold ui-title">High Definition (HD)</h4>
-                <p class="text-[11px] ui-subtitle font-medium mt-1 leading-relaxed">
-                  Full soft shadows, high-DPI retina antialiasing, rich voxel bursts &amp; deep frosted glass blur.
-                </p>
-              </div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-extrabold text-sky-500">
-                <span>Maximum Visual Fidelity</span>
-                <span id="hd-check-indicator">● Selected</span>
-              </div>
-            </button>
-
-            <!-- Low Definition (2GB RAM Ultra-Smooth) Option -->
-            <button id="select-ld-btn" type="button" data-gfx="ld" class="gfx-card-btn device-card-btn transition-zone rounded-[24px] p-4 text-left flex flex-col justify-between group">
-              <div>
-                <div class="flex items-center justify-between gap-2 mb-2">
-                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#95d5b2] to-[#fdffb6] flex items-center justify-center text-xl shadow-sm border border-white">
-                    ⚡
-                  </div>
-                  <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-500 bg-emerald-500/15 px-2.5 py-0.5 rounded-full">
-                    2GB RAM Optimized
-                  </span>
-                </div>
-                <h4 class="text-sm sm:text-base font-extrabold ui-title">Low Definition (LD Smooth)</h4>
-                <p class="text-[11px] ui-subtitle font-medium mt-1 leading-relaxed">
-                  Zero scroll lag, 60 FPS lock for 2GB RAM devices, pooled geometry &amp; ultra-fast GPU glass.
-                </p>
-              </div>
-              <div class="mt-3 flex items-center justify-between text-[11px] font-extrabold text-emerald-500">
-                <span>Ultra-Smooth Performance</span>
-                <span id="ld-check-indicator">○ Choose Mode</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 1 Next Action Button -->
-        <button id="step-1-next-btn" class="launch-cta-btn w-full py-3.5 rounded-[22px] font-extrabold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2">
-          <span>Next: 360° Avatar Maker &amp; World Setup →</span>
-        </button>
+      <div class="inline-flex items-center gap-2 px-3 py-0.5 mt-1.5 mb-3 rounded-full bg-white/10 border border-orange-200/40">
+        <span class="w-2 h-2 rounded-full bg-pink-200 animate-pulse"></span>
+        <span class="font-mono-code text-[10px] sm:text-[11px] font-semibold tracking-[0.18em] text-orange-100">MADE BY SOU.</span>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- STEP 2: 360° AVATAR MAKER, ENEMY DRESS & WORLD SETUP              -->
-      <!-- ================================================================= -->
-      <div id="init-step-2" class="hidden relative z-10 space-y-4">
-
-        <!-- 360° Avatar Studio & Pastel Dress Designer -->
-        <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h3 class="text-base sm:text-lg font-extrabold ui-title flex items-center gap-2">
-              <span>🎨 360° Ranger Avatar Studio</span>
-            </h3>
-            <span class="text-[11px] font-bold ui-subtitle">Drag room or slide to inspect 360°</span>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-            <!-- 360° Interactive Preview Room Canvas -->
-            <div class="lg:col-span-5 flex flex-col items-center">
-              <div id="avatar-preview-container" class="w-full h-56 sm:h-60 rounded-[24px] ios-glass transition-zone relative overflow-hidden cursor-grab active:cursor-grabbing flex items-center justify-center">
-                <canvas id="avatar-preview-canvas" class="w-full h-full block"></canvas>
-                <div class="absolute top-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-black/25 text-white backdrop-blur-md">360° Studio</span>
-                  <button id="avatar-autospin-btn" type="button" class="pointer-events-auto ios-glass-pill px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
-                    🔄 Auto-Spin: ON
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Avatar Dress & Appearance Pickers -->
-            <div class="lg:col-span-7 space-y-3.5">
-              <!-- Gender & Outfit Cut -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-1.5">Gender</span>
-                  <div class="flex gap-2">
-                    <button id="char-gender-female" type="button" class="ios-glass-pill transition-zone px-3 py-2 rounded-xl text-xs font-bold active flex-1">Female 👩‍🚀</button>
-                    <button id="char-gender-male" type="button" class="ios-glass-pill transition-zone px-3 py-2 rounded-xl text-xs font-bold flex-1">Male 👨‍🚀</button>
-                  </div>
-                </div>
-                <div>
-                  <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-1.5">Dress Cut</span>
-                  <select id="char-outfit-select" class="w-full ios-glass-pill transition-zone rounded-xl px-3 py-2 text-xs font-bold focus:outline-none">
-                    <option value="0" class="text-slate-900">Armored Astro Space Suit</option>
-                    <option value="1" class="text-slate-900">Couture Ruffled Frock</option>
-                    <option value="2" class="text-slate-900">Streetwear Tee &amp; Cargo Pants</option>
-                    <option value="3" class="text-slate-900">Tailored Vest, Tie &amp; Slacks</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- Shirt Colour Picker (Multiple OR Single Shade Allowed) -->
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👕 Shirt / Top Shade (Pick 1 or Multiple Shades)</span>
-                  <span id="shirt-shade-mode-label" class="text-[10px] font-extrabold text-rose-400">1 Shade Active</span>
-                </div>
-                <div class="grid grid-cols-8 gap-2" id="shirt-color-palette"></div>
-              </div>
-
-              <!-- Pant Colour Picker (Strictly Single Shade) -->
-              <div>
-                <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👖 Pant / Lower Dress (Pick 1 Colour)</span>
-                  <span class="text-[10px] font-extrabold text-indigo-400">Single Shade</span>
-                </div>
-                <div class="grid grid-cols-8 gap-2" id="pant-color-palette"></div>
-              </div>
-
-              <!-- Skin Tone Picker -->
-              <div>
-                <span class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-1.5">✨ Skin Tone</span>
-                <div class="grid grid-cols-8 gap-2" id="skin-tone-palette"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- World, Multi-Enemy & Enemy Dress Configuration -->
-        <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5 space-y-4">
-          <!-- 1. Multi-Select Enemy Roster (Choose 1 or Multiple Enemies) -->
-          <div>
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">👾 Select Enemy Types (Choose 1 or Multiple in Single Game)</label>
-              <button id="step2-select-all-enemies" type="button" class="ios-glass-pill px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">Select All 5</button>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              <button data-enemy-type="Zombies" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold active">🧟 Zombies</button>
-              <button data-enemy-type="Alien Ships" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">🛸 Alien Ships</button>
-              <button data-enemy-type="Skeletons" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">💀 Skeletons</button>
-              <button data-enemy-type="Ghosts" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">👻 Ghosts</button>
-              <button data-enemy-type="Entities" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold col-span-2 sm:col-span-1">✨ Entities</button>
-            </div>
-          </div>
-
-          <!-- 2. Enemy Dress Color Customizer -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle">🧥 Customize Enemy Dress &amp; Armor Palette</label>
-              <span id="enemy-dress-name" class="text-[10px] font-extrabold text-purple-400">Lavender Mint</span>
-            </div>
-            <div class="grid grid-cols-6 gap-2" id="enemy-dress-palette"></div>
-          </div>
-
-          <!-- 3. Biome Selection -->
-          <div>
-            <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🌸 Select World Biome</label>
-            <div id="step2-biome-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-2">
-              <button data-biome="0" type="button" class="step2-biome-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold active">🌿 Grass</button>
-              <button data-biome="1" type="button" class="step2-biome-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">🏜️ Ground</button>
-              <button data-biome="2" type="button" class="step2-biome-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">💎 Rock</button>
-              <button data-biome="3" type="button" class="step2-biome-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">🫧 Underwater</button>
-              <button data-biome="4" type="button" class="step2-biome-btn ios-glass-pill transition-zone py-2.5 px-2 rounded-2xl text-xs font-extrabold">☁️ Sky</button>
-            </div>
-          </div>
-
-          <!-- 4. Day / Night Sky Phase & Camera & Theme -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="space-y-3">
-              <div>
-                <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">☀️ Sky Phase Mode</label>
-                <div class="grid grid-cols-3 gap-1.5">
-                  <button data-phase="dynamic" type="button" class="step2-phase-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold active">🌅 Dynamic</button>
-                  <button data-phase="forcedDay" type="button" class="step2-phase-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">☀️ Day</button>
-                  <button data-phase="forcedNight" type="button" class="step2-phase-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">🌙 Night</button>
-                </div>
-              </div>
-              <div>
-                <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">✨ Glass Surface Theme</label>
-                <div class="grid grid-cols-2 gap-2">
-                  <button data-theme="light" type="button" class="step2-theme-btn ios-glass-pill transition-zone py-2 px-3 rounded-xl text-xs font-extrabold active">☀️ White Mode</button>
-                  <button data-theme="dark" type="button" class="step2-theme-btn ios-glass-pill transition-zone py-2 px-3 rounded-xl text-xs font-extrabold">🌙 Dark Mode</button>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🎥 Camera Perspective</label>
-              <div class="grid grid-cols-3 gap-1.5">
-                <button data-cam="0" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold active">Classic</button>
-                <button data-cam="1" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Action Close</button>
-                <button data-cam="2" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Top-Down</button>
-                <button data-cam="3" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">First-Person</button>
-                <button data-cam="4" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Cinematic</button>
-                <button data-cam="5" type="button" class="step2-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Fixed Swivel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 2 Navigation & Prominent Launch Button -->
-        <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
-          <button id="step-2-back-btn" type="button" class="ios-glass-pill transition-zone w-full sm:w-auto px-6 py-3.5 rounded-[22px] text-xs sm:text-sm font-extrabold">
-            ← Back to Device Selection
-          </button>
-          <button id="initiate-game-btn" type="button" class="launch-cta-btn w-full flex-1 py-4 px-6 rounded-[24px] text-base sm:text-lg font-extrabold tracking-wide flex items-center justify-center gap-2.5">
-            <span>🚀 Initiate Novashot — Play Now</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Rules Footer -->
-      <div class="ios-glass-subcard transition-zone rounded-2xl p-3.5 mt-4 text-xs ui-subtitle flex flex-wrap justify-around gap-3 font-bold text-center relative z-10">
-        <span>🌀 Portal Wall-Wrap</span>
-        <span>🍑 Damage Spawns Healing Fruit</span>
-        <span>🛡️ 1s Enemy Grace Delay</span>
-        <span>🎥 6 Smooth Cam Modes</span>
-        <span>💎 Diamonds Persist &amp; Revive</span>
-        <span>🛡️ Special Shield Drops Prevent Accidents</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- 1B. "YOU DIED" MODAL OVERLAY (WITH STORED DIAMOND REVIVE)             -->
-  <!-- ===================================================================== -->
-  <div id="you-died-modal" class="modal-backdrop scroll-lag-free hidden-modal">
-    <div class="ios-glass transition-zone modal-fit-card ui-scalable-modal rounded-[40px] max-w-md w-full p-6 sm:p-8 text-center relative">
-      <div class="ambient-glow-orb absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-400/35 blur-3xl pointer-events-none"></div>
-      <div class="ambient-glow-orb absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-indigo-400/35 blur-3xl pointer-events-none"></div>
-
-      <div class="relative z-10">
-        <div class="w-16 h-16 mx-auto mb-3 rounded-3xl bg-gradient-to-br from-rose-400 to-purple-500 flex items-center justify-center text-3xl shadow-lg border-2 border-white">
-          💔
-        </div>
-        <span class="text-[11px] font-extrabold uppercase tracking-[0.28em] text-rose-400 block mb-1">PASTEL SHIELD DEPLETED</span>
-        <h2 class="text-4xl sm:text-5xl font-black tracking-tight game-brand-title mb-2">YOU DIED</h2>
-        <p id="died-reason-subtext" class="text-xs sm:text-sm ui-subtitle font-semibold mb-5">
-          Your high score, survival records, and collected diamonds have been safely archived.
-        </p>
-
-        <div class="ios-glass-subcard transition-zone rounded-2xl p-3.5 mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <div>
-            <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Score</span>
-            <span id="died-score-val" class="text-lg font-extrabold text-emerald-400">0</span>
-          </div>
-          <div>
-            <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span>
-            <span id="died-best-val" class="text-lg font-extrabold text-amber-400">0</span>
-          </div>
-          <div>
-            <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span>
-            <span id="died-time-val" class="text-lg font-extrabold text-sky-400">00:00</span>
-          </div>
-          <div>
-            <span class="text-[10px] font-bold uppercase ui-subtitle block">💎 Stored</span>
-            <span id="died-diamonds-val" class="text-lg font-extrabold text-cyan-400">0</span>
-          </div>
-        </div>
-
-        <!-- Persistent Diamond Vault Info Banner -->
-        <div id="died-diamond-vault-banner" class="ios-glass-subcard transition-zone rounded-2xl px-3.5 py-2.5 mb-5 flex items-center justify-between gap-2 text-xs font-extrabold">
-          <span class="ui-title flex items-center gap-1.5">💎 Diamond Vault Balance: <strong id="died-vault-balance" class="text-cyan-400">0</strong></span>
-          <span id="died-revive-cost-badge" class="px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-400/40 text-[10px]">
-            Revive Cost: 3 💎
+      <!-- Step 1: Choose Control Platform -->
+      <div class="text-left mb-3.5">
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+            <svg class="svg-icon text-orange-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="14" height="12" rx="2"/><rect x="18" y="8" width="4" height="12" rx="1"/><path d="M6 20h6"/>
+            </svg>
+            1. Select Control Platform
+          </span>
+          <span id="detected-device-pill" class="text-[9px] sm:text-[10px] font-mono-code text-sky-100 bg-sky-300/20 border border-sky-200/35 px-2 py-0.5 rounded-full">
+            Auto-Detected
           </span>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <!-- Revive Using Stored Diamonds (Keeps Current Run Score, Time, Wave & Grants Aegis Shield) -->
-          <button id="died-diamond-revive-btn" type="button" class="ios-glass-pill transition-zone w-full py-3.5 px-6 rounded-[22px] text-sm sm:text-base font-extrabold flex items-center justify-center gap-2 border-2 border-cyan-400/80 bg-cyan-500/20">
-            <span>💎 Revive &amp; Continue Run (Use 3 💎)</span>
-          </button>
-          <button id="died-respawn-btn" type="button" class="launch-cta-btn w-full py-3.5 px-6 rounded-[22px] text-sm sm:text-base font-extrabold flex items-center justify-center gap-2">
-            <span>⚡ Respawn Fresh Run (3s Countdown)</span>
-          </button>
-          <button id="died-avatar-settings-btn" type="button" class="ios-glass-pill transition-zone w-full py-3.5 px-5 rounded-[22px] text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2">
-            <span>🎨 Select Avatar &amp; Settings</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- 2. DEDICATED PAUSE & WORLD STUDIO OVERLAY                             -->
-  <!-- ===================================================================== -->
-  <div id="pause-modal" class="modal-backdrop scroll-lag-free hidden-modal">
-    <div class="ios-glass transition-zone modal-fit-card ui-scalable-modal rounded-[40px] max-w-xl w-full p-5 sm:p-8 relative">
-      <div class="ambient-glow-orb absolute -top-16 -left-16 w-44 h-44 rounded-full bg-rose-300/30 blur-3xl pointer-events-none"></div>
-      <div class="ambient-glow-orb absolute -bottom-16 -right-16 w-44 h-44 rounded-full bg-sky-300/30 blur-3xl pointer-events-none"></div>
-
-      <!-- Header -->
-      <div class="flex items-center justify-between gap-3 mb-4 relative z-10">
-        <div>
-          <span class="text-[10px] font-extrabold uppercase tracking-[0.22em] text-rose-400 block">GAME PAUSED</span>
-          <h2 class="text-2xl sm:text-3xl font-extrabold ui-title">World &amp; Studio Deck</h2>
-        </div>
-        <button id="pause-QuickResume-btn" class="launch-cta-btn px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center gap-1.5">
-          <span>▶ Resume</span>
-        </button>
-      </div>
-
-      <!-- Live Session & Saved High-Score Telemetry + Stored Diamonds & Shield -->
-      <div class="ios-glass-subcard transition-zone rounded-[24px] p-3.5 mb-4 grid grid-cols-2 sm:grid-cols-6 gap-2 text-center relative z-10">
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">Current Score</span>
-          <span id="pause-curr-score" class="text-lg font-extrabold text-emerald-400">0</span>
-        </div>
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Score</span>
-          <span id="pause-best-score" class="text-lg font-extrabold text-amber-400">0</span>
-        </div>
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">Run Time</span>
-          <span id="pause-curr-time" class="text-lg font-extrabold text-sky-400">00:00</span>
-        </div>
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">Best Time</span>
-          <span id="pause-best-time" class="text-lg font-extrabold text-purple-400">00:00</span>
-        </div>
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">💎 Vault</span>
-          <span id="pause-diamonds-bank" class="text-lg font-extrabold text-cyan-400">0</span>
-        </div>
-        <div class="p-2 rounded-xl bg-white/10">
-          <span class="text-[10px] font-bold uppercase ui-subtitle block">🛡️ Aegis</span>
-          <span id="pause-aegis-count" class="text-lg font-extrabold text-emerald-400">0</span>
-        </div>
-      </div>
-
-      <!-- Environment & UI Controls inside Pause Screen -->
-      <div class="ios-glass-subcard transition-zone rounded-[28px] p-4 sm:p-5 space-y-4 relative z-10">
-        <!-- Graphics Definition Switcher inside Pause Deck -->
-        <div>
-          <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">⚡ Graphics &amp; RAM Optimization Mode</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button data-gfx="hd" type="button" class="pause-gfx-btn ios-glass-pill transition-zone py-2 px-3 rounded-xl text-xs font-extrabold active">✨ High Definition (HD)</button>
-            <button data-gfx="ld" type="button" class="pause-gfx-btn ios-glass-pill transition-zone py-2 px-3 rounded-xl text-xs font-extrabold">⚡ Low Definition (2GB RAM Smooth)</button>
-          </div>
-        </div>
-
-        <!-- Biome Selector -->
-        <div>
-          <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🌸 Biome Environment</label>
-          <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-            <button data-biome="0" class="pause-biome-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-xs font-extrabold">🌿 Grass</button>
-            <button data-biome="1" class="pause-biome-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-xs font-extrabold">🏜️ Ground</button>
-            <button data-biome="2" class="pause-biome-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-xs font-extrabold">💎 Rock</button>
-            <button data-biome="3" class="pause-biome-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-xs font-extrabold">🫧 Water</button>
-            <button data-biome="4" class="pause-biome-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-xs font-extrabold">☁️ Sky</button>
-          </div>
-        </div>
-
-        <!-- Day / Night Sky Phase -->
-        <div>
-          <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">☀️ Day &amp; Night Atmosphere</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button data-phase="dynamic" class="pause-phase-btn ios-glass-pill transition-zone py-2 px-2.5 rounded-xl text-xs font-extrabold">🌅 Dynamic</button>
-            <button data-phase="forcedDay" class="pause-phase-btn ios-glass-pill transition-zone py-2 px-2.5 rounded-xl text-xs font-extrabold">☀️ Day Mode</button>
-            <button data-phase="forcedNight" class="pause-phase-btn ios-glass-pill transition-zone py-2 px-2.5 rounded-xl text-xs font-extrabold">🌙 Night Mode</button>
-          </div>
-        </div>
-
-        <!-- UI Theme (White vs Dark) & Multi-Visitor Wave -->
-        <div class="space-y-3">
-          <div>
-            <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">✨ UI Glass Mode (Upper-Left ↘ Lower-Right)</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button data-theme="light" class="pause-theme-btn ios-glass-pill transition-zone py-2.5 px-3 rounded-xl text-xs font-extrabold">☀️ White Mode</button>
-              <button data-theme="dark" class="pause-theme-btn ios-glass-pill transition-zone py-2.5 px-3 rounded-xl text-xs font-extrabold">🌙 Dark Mode</button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <!-- Smartphone / Touch Option -->
+          <div id="card-device-mobile" data-device="mobile" class="spatial-card rounded-[20px] p-3 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-sky-200/20 border border-sky-200/40 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-sky-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="18" r="1"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">Smartphone / Touch</h3>
+                <span class="device-check hidden text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Direct touch tap selection, 1-finger orbit &amp; 2-finger pinch-to-zoom.
+              </p>
             </div>
           </div>
 
-          <div>
-            <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">👾 Active Visitor Wave Roster (1 or Multiple)</label>
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-              <button data-enemy-type="Zombies" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">🧟 Zombies</button>
-              <button data-enemy-type="Alien Ships" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">🛸 Aliens</button>
-              <button data-enemy-type="Skeletons" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">💀 Skeletons</button>
-              <button data-enemy-type="Ghosts" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">👻 Ghosts</button>
-              <button data-enemy-type="Entities" type="button" class="multi-enemy-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">✨ Entities</button>
+          <!-- PC / Laptop Option -->
+          <div id="card-device-pc" data-device="pc" class="spatial-card selected-device rounded-[20px] p-3 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-orange-200/20 border border-orange-200/40 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-orange-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/>
+              </svg>
             </div>
-          </div>
-        </div>
-
-        <!-- Camera Perspective Selector -->
-        <div>
-          <label class="text-[11px] font-extrabold uppercase tracking-wider ui-subtitle block mb-2">🎥 Camera Perspective</label>
-          <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-            <button data-cam="0" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Classic</button>
-            <button data-cam="1" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Action Close</button>
-            <button data-cam="2" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Top-Down</button>
-            <button data-cam="3" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">First-Person</button>
-            <button data-cam="4" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Cinematic</button>
-            <button data-cam="5" class="pause-cam-btn ios-glass-pill transition-zone py-2 px-2 rounded-xl text-[11px] font-extrabold">Fixed Swivel</button>
-          </div>
-        </div>
-
-        <!-- Speed Sliders / Step Controls -->
-        <div class="grid grid-cols-2 gap-3 pt-1">
-          <div class="ios-glass-subcard transition-zone rounded-2xl p-2.5 flex items-center justify-between">
-            <span class="text-xs font-bold ui-title">👾 Spd: <strong id="pause-enemy-spd">1.0x</strong></span>
-            <div class="flex gap-1">
-              <button id="pause-enemy-slower" class="ios-glass-pill w-7 h-7 rounded-lg font-extrabold flex items-center justify-center">−</button>
-              <button id="pause-enemy-faster" class="ios-glass-pill w-7 h-7 rounded-lg font-extrabold flex items-center justify-center">+</button>
-            </div>
-          </div>
-          <div class="ios-glass-subcard transition-zone rounded-2xl p-2.5 flex items-center justify-between">
-            <span class="text-xs font-bold ui-title">☀️ Sky: <strong id="pause-cycle-spd">1.0x</strong></span>
-            <div class="flex gap-1">
-              <button id="pause-cycle-slower" class="ios-glass-pill w-7 h-7 rounded-lg font-extrabold flex items-center justify-center">−</button>
-              <button id="pause-cycle-faster" class="ios-glass-pill w-7 h-7 rounded-lg font-extrabold flex items-center justify-center">+</button>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">PC / Laptop</h3>
+                <span class="device-check text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Mouse click + Keyboard (<span class="font-mono-code text-orange-100">WASD/Arrows</span> cursor, <span class="font-mono-code text-orange-100">Enter</span> move, <span class="font-mono-code text-orange-100">Q/E</span> orbit).
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Actions: Resume with 3s Countdown OR Save & Return to Main Menu -->
-      <div class="flex flex-col sm:flex-row gap-3 mt-5 relative z-10">
-        <button id="pause-main-menu-btn" class="ios-glass-pill transition-zone py-3.5 px-5 rounded-[22px] text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2">
-          <span>🏠 Save &amp; Main Menu</span>
-        </button>
-        <button id="pause-resume-btn" class="launch-cta-btn flex-1 py-3.5 px-6 rounded-[22px] text-sm sm:text-base font-extrabold flex items-center justify-center gap-2">
-          <span>▶ Resume Game</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- 3. SMOOTH ROTATING CIRCULAR COUNTDOWN OVERLAY                         -->
-  <!-- ===================================================================== -->
-  <div id="countdown-overlay">
-    <div class="ios-glass transition-zone countdown-glass-circle">
-      <!-- SVG Circular Frame & Rotating Outer Rim -->
-      <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 200 200">
-        <defs>
-          <linearGradient id="cd-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ff758f" />
-            <stop offset="50%" stop-color="#bdb2ff" />
-            <stop offset="100%" stop-color="#9bf6ff" />
-          </linearGradient>
-        </defs>
-        <!-- Subtle Stopwatch Tick Dial Ring -->
-        <circle cx="100" cy="100" r="68" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3.5" stroke-dasharray="2 6.9" />
-        <!-- Subtle Inner Track -->
-        <circle cx="100" cy="100" r="76" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="5" />
-        <!-- Smoothly Depleting Progress Arc -->
-        <circle id="countdown-progress-arc" cx="100" cy="100" r="76" fill="none" stroke="url(#cd-grad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="477.5" stroke-dashoffset="0" />
-        <!-- Outer Rotating Rim Group (Rotates 360 deg per second smoothly) -->
-        <g id="countdown-outer-rim" style="transform-origin: 100px 100px;">
-          <circle cx="100" cy="100" r="90" fill="none" stroke="url(#cd-grad)" stroke-width="4" stroke-dasharray="28 19" stroke-linecap="round" opacity="0.9" />
-          <!-- Leading Orbital Beacon Dot at Top of Rim -->
-          <circle cx="100" cy="10" r="6" fill="#ff758f" stroke="#ffffff" stroke-width="2" />
-          <circle cx="100" cy="190" r="4.5" fill="#9bf6ff" stroke="#ffffff" stroke-width="1.5" />
-        </g>
-      </svg>
-
-      <!-- Center Animated Numeral & Live Millisecond Countdown Stopwatch -->
-      <div class="flex flex-col items-center justify-center text-center relative z-10">
-        <span id="countdown-numeral">3</span>
-        <span id="countdown-ms-stopwatch" class="text-xs font-extrabold tabular-nums tracking-wider text-rose-400 mt-0.5">
-          03.00s
-        </span>
-        <span id="countdown-sublabel" class="text-[9px] font-extrabold uppercase tracking-[0.2em] ui-subtitle mt-0.5">
-          GET READY
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===================================================================== -->
-  <!-- 4. LIVE HUD & INTERACTIVE CONTROL LAYER (NON-OVERLAPPING SCALABLE)    -->
-  <!-- ===================================================================== -->
-  <div id="live-hud-root" class="fixed inset-0 pointer-events-none z-20 flex flex-col justify-between p-2.5 sm:p-5 hud-non-overlap-shell">
-
-    <!-- TOP REGION: UNIFIED ANNOUNCEMENT+UNHIDE CAPSULE ON VERY TOP + UPPERMOST UI + ALIGNED LEFT/RIGHT UI -->
-    <div id="hud-top-stack" class="w-full flex flex-col items-center">
-
-      <!-- 0) UNIFIED CENTRALIZED UNHIDE & ANNOUNCEMENT CAPSULE -->
-      <!-- Centralizes Unhide button when no announcement; merges into 1 unit when announcement appears; re-centralizes when announcement disappears -->
-      <div id="top-announcement-row" class="w-full flex items-center justify-center pointer-events-none z-30">
-        <div id="top-unified-capsule" class="ios-glass transition-zone shadow-xl max-w-[95vw]">
-          <div id="toast-segment" class="text-xs sm:text-sm font-extrabold tracking-wide ui-title">
-            <span id="toast-text">Welcome to Novashot!</span>
-          </div>
-          <div id="capsule-divider"></div>
-          <div id="unhide-segment" class="flex items-center justify-center">
-            <button id="unhide-all-ui-btn" type="button" class="ios-glass-pill transition-zone px-3.5 py-1 rounded-full text-xs font-extrabold inline-flex items-center gap-2 border border-rose-300/80">
-              <span>👁️ Unhide All UI</span>
-              <span id="hidden-ui-count-badge" class="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px]">1</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- TOP BAR: Uppermost UI at top + Left & Right UI row underneath -->
-      <div id="hud-top-bar" class="w-full flex flex-col items-center">
-
-        <!-- 1) UPPERMOST UI: App Brand, Controls & Live Cycle Countdown Stopwatch -->
-        <div id="hud-uppermost-row" class="w-full flex justify-center">
-          <div id="hud-brand-card" class="ios-glass transition-zone hud-collapsible-top ui-scalable-panel rounded-[24px] px-4 py-2.5 flex items-center gap-3.5 pointer-events-auto max-w-full">
-            <!-- Luxurious Shooter Game Icon SVG -->
-            <svg class="w-11 h-11 rounded-2xl shadow-lg shrink-0" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-label="Novashot Game Icon">
-              <defs>
-                <linearGradient id="hud-lux-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#1e1b4b"/>
-                  <stop offset="52%" stop-color="#5b21b6"/>
-                  <stop offset="100%" stop-color="#db2777"/>
-                </linearGradient>
-                <linearGradient id="hud-lux-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#fef08a"/>
-                  <stop offset="50%" stop-color="#ffafcc"/>
-                  <stop offset="100%" stop-color="#9bf6ff"/>
-                </linearGradient>
-              </defs>
-              <rect width="128" height="128" rx="30" fill="url(#hud-lux-bg)" stroke="url(#hud-lux-gold)" stroke-width="5"/>
-              <circle cx="64" cy="64" r="42" fill="none" stroke="url(#hud-lux-gold)" stroke-width="2.8" stroke-dasharray="14 8"/>
-              <circle cx="64" cy="64" r="28" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
-              <path d="M64 11 L64 29 M64 99 L64 117 M11 64 L29 64 M99 64 L117 64" stroke="url(#hud-lux-gold)" stroke-width="4" stroke-linecap="round"/>
-              <path d="M38 74 L55 46 L82 46 L94 58 L75 82 L44 82 Z" fill="url(#hud-lux-gold)"/>
-              <circle cx="64" cy="64" r="8.5" fill="#ffffff"/>
+      <!-- Step 2: Choose Graphics Definition Mode (High Def vs Low Def 2GB RAM Optimizer) -->
+      <div class="text-left mb-3.5">
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+            <svg class="svg-icon text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
             </svg>
-
-            <div class="overflow-hidden">
-              <div class="flex items-center gap-2 flex-wrap mb-1">
-                <h1 class="text-base sm:text-lg font-extrabold tracking-tight game-brand-title mr-1">Novashot</h1>
-
-                <!-- Pause / Resume Button -->
-                <button id="hud-pause-btn" title="Pause / World Settings (P)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  ⏸️ <span id="hud-pause-label">Pause</span>
-                </button>
-
-                <!-- Camera Perspective Button -->
-                <button id="hud-cam-btn" title="Switch Camera View (C)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  🎥 <span id="hud-cam-label">Classic</span>
-                </button>
-
-                <!-- White / Dark UI Theme Button -->
-                <button id="hud-theme-btn" title="Switch White / Dark Glass UI" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  ☀️ <span id="hud-theme-label">White</span>
-                </button>
-
-                <!-- High / Low Definition Mode Button -->
-                <button id="hud-gfx-btn" title="Switch High / Low Definition Mode (G)" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  ✨ <span id="hud-gfx-label">HD</span>
-                </button>
-
-                <!-- Audio Mute Button -->
-                <button id="mute-audio-btn" title="Toggle Synthesized Audio" class="ios-glass-pill transition-zone px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  🔊 <span id="audio-state-label">Audio</span>
-                </button>
-
-                <!-- Sky Phase Mode Button -->
-                <button id="cycle-mode-btn" title="Sky Phase Mode" class="ios-glass-pill transition-zone px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shrink-0">
-                  🌅 <span id="cycle-mode-label">Dynamic</span>
-                </button>
-
-                <!-- Hide Brand Panel Individually -->
-                <button data-hide-target="hud-brand-card" title="Hide Brand & Controls Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0 ml-0.5">
-                  ✕
-                </button>
-              </div>
-
-              <div class="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider ui-subtitle">
-                <span id="cycle-readout" class="truncate">Day 1 • Pastel Morning</span>
-                <span>•</span>
-                <span class="shrink-0 text-indigo-500 dark:text-indigo-300">⏱️ <strong id="hud-timer-val" class="tabular-nums">00:00.0</strong></span>
-                <span>•</span>
-                <span class="shrink-0 text-rose-500">⏳ <strong id="hud-phase-countdown" class="tabular-nums">20s</strong></span>
-              </div>
-            </div>
-          </div>
+            2. Select Graphics Definition Mode
+          </span>
+          <span id="detected-ram-pill" class="text-[9px] sm:text-[10px] font-mono-code text-emerald-100 bg-emerald-300/20 border border-emerald-200/35 px-2 py-0.5 rounded-full">
+            Hardware Tuned
+          </span>
         </div>
 
-        <!-- 2) ALIGNED LEFT UI & RIGHT UI ROW (STRICTLY NON-OVERLAPPING) -->
-        <div id="hud-lr-row" class="w-full flex items-stretch">
-          <div id="lr-spacer-left" class="lr-flex-spacer" style="flex-grow: 0;"></div>
-
-          <!-- LEFT UI: Health, Collectibles, Credit Diamonds & Special Accident Shield Card -->
-          <div id="hud-health-card" class="ios-glass transition-zone hud-collapsible-top ui-scalable-panel rounded-[24px] px-4 py-2.5 w-full sm:w-auto min-w-[235px] min-h-[78px] flex flex-col justify-between pointer-events-auto">
-            <div class="flex justify-between items-center gap-2 text-[11px] font-extrabold tracking-wider uppercase mb-1.5 ui-title">
-              <span>♥ Pastel Shield</span>
-              <div class="flex items-center gap-1.5">
-                <span id="health-text">6 / 6 HITS (3.0 ♥)</span>
-                <button data-hide-target="hud-health-card" title="Hide Shield & Collectibles Panel" class="hide-ui-chip ios-glass-pill transition-zone shrink-0">
-                  ✕
-                </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <!-- High Definition Option -->
+          <div id="card-def-high" data-def="high" class="spatial-card selected-device rounded-[20px] p-3 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-pink-200/20 border border-pink-200/40 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-pink-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">High Definition (HD)</h3>
+                <span class="def-check text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
               </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Full soft shadows, high-DPI anti-aliasing, dense foliage &amp; rich shatter physics (4GB+ RAM).
+              </p>
             </div>
-            <div class="grid grid-cols-6 gap-1" id="health-bar">
-              <div class="health-seg active"></div>
-              <div class="health-seg active"></div>
-              <div class="health-seg active"></div>
-              <div class="health-seg active"></div>
-              <div class="health-seg active"></div>
-              <div class="health-seg active"></div>
-            </div>
-            <div class="flex justify-between items-center text-xs font-bold mt-2 ui-title gap-2">
-              <span>🍑 Fruit: <strong id="fruits-count" class="text-rose-500">0</strong></span>
-              <span>⚡ Ammo: <strong id="ammo-count" class="text-amber-500">40</strong></span>
-              <span>🎯 Hits: <strong id="kills-count" class="text-sky-500">0</strong></span>
-            </div>
+          </div>
 
-            <!-- Credit Orbs / Diamonds & Accident-Prevention Special Shield Status Bar -->
-            <div id="hud-diamonds-shield-row" class="flex justify-between items-center text-[11px] font-extrabold mt-1.5 pt-1.5 border-t border-white/25 ui-title gap-2">
-              <span title="Stored Diamonds persist across games and revive you on death">
-                💎 Orbs: <strong id="diamonds-count" class="text-cyan-400 tabular-nums">0</strong>
-                <small id="diamonds-bank-hud" class="text-[9px] text-sky-400 font-bold">(Vault: 0)</small>
-              </span>
-              <span title="Special Shield Drop prevents enemy/infiltration/core accidents">
-                🛡️ Aegis: <strong id="aegis-shield-count" class="text-emerald-400 tabular-nums">0</strong>
-                <small id="aegis-shield-status" class="text-[9px] text-emerald-400 font-bold">STANDBY</small>
-              </span>
+          <!-- Low Definition (2GB RAM Ultra-Smooth) Option -->
+          <div id="card-def-low" data-def="low" class="spatial-card rounded-[20px] p-3 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-emerald-200/20 border border-emerald-200/40 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-emerald-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
             </div>
-
-            <!-- Exclusive Fixed Swivel Mode Reload & Core Stability Bar -->
-            <div id="swivel-core-bar-wrap" class="hidden mt-2 pt-1.5 border-t border-white/30 flex-col gap-1">
-              <div class="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-wider">
-                <span class="text-sky-400 flex items-center gap-1">🔄 Swivel Core (Press R)</span>
-                <span id="swivel-core-timer-txt" class="text-emerald-400 tabular-nums">15.0s</span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">Low Definition (2GB RAM)</h3>
+                <span class="def-check hidden text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
               </div>
-              <div class="w-full h-2 rounded-full bg-slate-500/30 overflow-hidden p-0.5">
-                <div id="swivel-core-fill" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400 transition-all duration-100" style="width: 100%;"></div>
-              </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Zero-lag 60FPS mode for 2GB RAM devices. Optimized shaders, zero scroll lag &amp; light memory footprint.
+              </p>
             </div>
-          </div>
-
-          <div id="lr-spacer-middle" class="lr-flex-spacer" style="flex-grow: 1; min-width: 10px;"></div>
-
-          <!-- RIGHT UI: Score, Time Stopwatch, Stored Diamonds & Mode Telemetry Card -->
-          <div id="hud-score-card" class="ios-glass transition-zone hud-collapsible-top ui-scalable-panel rounded-[24px] px-4 py-2.5 min-h-[78px] flex items-center gap-3.5 sm:gap-5 pointer-events-auto">
-            <div class="flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Score</span>
-              <span id="score-val" class="text-xl sm:text-2xl font-extrabold text-emerald-500 tabular-nums leading-tight">0</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best</span>
-              <span id="high-score-val" class="text-xl sm:text-2xl font-extrabold text-amber-500 tabular-nums leading-tight">0</span>
-            </div>
-            <div class="flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">⏱️ Stopwatch</span>
-              <span id="score-card-timer-val" class="text-base sm:text-lg font-extrabold text-indigo-500 tabular-nums leading-tight">00:00.0</span>
-              <span id="score-card-phase-cd" class="text-[9px] font-extrabold text-rose-400 tabular-nums">Next Phase: 20s</span>
-            </div>
-            <div id="hud-best-time-stat" class="hidden flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Best Time</span>
-              <span id="hud-best-time-val" class="text-base sm:text-lg font-extrabold text-purple-500 tabular-nums leading-tight">00:00.0</span>
-            </div>
-            <div id="hud-diamond-bank-col" class="flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">💎 Vault</span>
-              <span id="score-card-diamonds-val" class="text-base sm:text-lg font-extrabold text-cyan-400 tabular-nums leading-tight">0</span>
-            </div>
-            <div class="hidden md:flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">Visitor (E)</span>
-              <span id="enemy-mode-val" class="text-sm font-extrabold text-rose-500">Zombies</span>
-            </div>
-            <div class="hidden md:flex flex-col">
-              <span class="text-[10px] font-extrabold uppercase tracking-wider ui-subtitle">World (B)</span>
-              <span id="biome-val" class="text-sm font-extrabold text-sky-500">Grass</span>
-            </div>
-            <button data-hide-target="hud-score-card" title="Hide Score & Telemetry Panel" class="hide-ui-chip ios-glass-pill transition-zone self-start">
-              ✕
-            </button>
-          </div>
-
-          <div id="lr-spacer-right" class="lr-flex-spacer" style="flex-grow: 0;"></div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- BOTTOM CONTROLS: ADAPTS TO TOUCH OR DESKTOP MODE (Anchored at base of screen) -->
-    <div id="hud-bottom-stack" class="w-full flex flex-col gap-2.5 mt-auto">
-
-      <!-- =============================================================== -->
-      <!-- A) TOUCH CONTROLS (Shown in Smartphone / Tablet Mode)           -->
-      <!-- Touch controls cannot be hidden so mobile players never lose pad -->
-      <!-- =============================================================== -->
-      <div id="touch-controls-layer" class="hidden w-full flex-col gap-3 pointer-events-auto">
-        <!-- Quick Touch Action Bar for Speeds & Toggles -->
-        <div class="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2">
-          <!-- Enemy Speed A/D -->
-          <div class="ios-glass transition-zone rounded-2xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-bold ui-title">
-            <span>👾 Spd: <strong id="touch-enemy-spd">1.0x</strong></span>
-            <button id="btn-enemy-slower" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">−</button>
-            <button id="btn-enemy-faster" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">+</button>
-          </div>
-
-          <!-- Day/Night Speed W/S -->
-          <div class="ios-glass transition-zone rounded-2xl px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-bold ui-title">
-            <span>☀️ Sky: <strong id="touch-cycle-spd">1.0x</strong></span>
-            <button id="btn-cycle-slower" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">−</button>
-            <button id="btn-cycle-faster" class="ios-glass-pill transition-zone w-7 h-7 rounded-xl font-extrabold flex items-center justify-center">+</button>
-          </div>
-
-          <!-- Enemy, Biome & Cam Switchers -->
-          <button id="btn-toggle-enemy" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
-            👾 <span id="touch-enemy-label">Zombies</span>
-          </button>
-          <button id="btn-toggle-biome" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
-            🌸 <span id="touch-biome-label">Grass</span>
-          </button>
-          <button id="btn-toggle-cam" class="ios-glass-pill transition-zone rounded-2xl px-3 py-2 text-xs font-extrabold flex items-center gap-1">
-            🎥 <span id="touch-cam-label">Classic</span>
-          </button>
-        </div>
-
-        <!-- Ergonomic Bottom Thumb Pads: Left/Right Movement & Right Zoom + Fire Buttons -->
-        <div class="flex justify-between items-end w-full px-1 sm:px-4 pb-1 gap-2">
-          <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <button id="touch-left-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">
-              ◀
-            </button>
-            <button id="touch-right-btn" class="touch-btn transition-zone w-16 h-16 sm:w-20 sm:h-20 rounded-[26px] flex items-center justify-center text-2xl sm:text-3xl font-black">
-              ▶
-            </button>
-          </div>
-
-          <div class="flex items-end gap-2.5 sm:gap-3.5 shrink-0">
-            <button id="touch-reload-btn" type="button" class="touch-btn transition-zone hidden w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex-col items-center justify-center border-emerald-400/80">
-              <span class="text-lg sm:text-xl leading-none">🔄</span>
-              <span id="touch-reload-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Reload</span>
-            </button>
-
-            <button id="touch-magnify-btn" type="button" class="touch-btn transition-zone w-14 h-14 sm:w-16 sm:h-16 rounded-[22px] flex flex-col items-center justify-center">
-              <span class="text-lg sm:text-xl leading-none">🔍</span>
-              <span id="touch-magnify-label" class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider mt-0.5">Zoom</span>
-            </button>
-
-            <button id="touch-fire-btn" class="fire-btn w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center text-white shadow-xl shrink-0">
-              <span class="text-2xl sm:text-3xl leading-none">⚡</span>
-              <span class="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider mt-1">Shoot</span>
-            </button>
           </div>
         </div>
       </div>
 
-      <!-- =============================================================== -->
-      <!-- B) KEYBOARD DOCK (Shown in Laptop / Desktop Mode)               -->
-      <!-- Includes its own individual Hide button                         -->
-      <!-- =============================================================== -->
-      <div id="desktop-controls-layer" class="hidden w-full justify-center pointer-events-auto">
-        <div id="hud-desktop-dock" class="ios-glass transition-zone hud-collapsible-bottom ui-scalable-panel rounded-[26px] px-4 py-2.5 flex flex-wrap justify-center items-center gap-2 sm:gap-3 text-xs font-bold ui-title max-w-full">
-          <div class="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-white/10 shrink-0">
-            <span class="kbd-badge">←</span><span class="kbd-badge">→</span>
-            <span>Move</span>
+      <!-- Step 3: Choose Side of the Board & Custom Sovereign Names -->
+      <div class="text-left mb-3.5">
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+            <svg class="svg-icon text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            3. Choose Side of Board &amp; Sovereign Names
+          </span>
+          <span id="selected-side-pill" class="text-[9px] sm:text-[10px] font-mono-code text-orange-100 bg-orange-300/20 border border-orange-200/35 px-2 py-0.5 rounded-full">
+            Playing as Pearl (White)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+          <!-- Play as Pastel Pearl (White / First Move) -->
+          <div id="card-side-white" data-side="w" class="spatial-card selected-device rounded-[20px] p-2.5 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-orange-200/25 border border-orange-200/50 flex items-center justify-center shrink-0 text-base text-orange-100">
+              ♔
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">Pastel Pearl (White)</h3>
+                <span class="side-check text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Command the light marble host from the South side &amp; make the opening move.
+              </p>
+            </div>
           </div>
-          <button id="desk-shoot-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">↑</span>
-            <span>Blaster</span>
-          </button>
-          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 shrink-0">
-            <button id="desk-a-btn" class="kbd-badge cursor-pointer hover:scale-105">A</button>
-            <button id="desk-d-btn" class="kbd-badge cursor-pointer hover:scale-105">D</button>
-            <span>Enemy: <strong id="enemy-speed-ui" class="text-rose-500">1.0x</strong></span>
+
+          <!-- Play as Dusk Lilac (Black / Second Move) -->
+          <div id="card-side-black" data-side="b" class="spatial-card rounded-[20px] p-2.5 text-left flex items-start gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-purple-300/25 border border-purple-200/50 flex items-center justify-center shrink-0 text-base text-purple-100">
+              ♚
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <h3 class="font-bold text-xs sm:text-sm text-white truncate">Dusk Lilac (Black)</h3>
+                <span class="side-check hidden text-orange-200 shrink-0">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1.2 14.2-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4z"/></svg>
+                </span>
+              </div>
+              <p class="text-[10px] sm:text-[11px] text-slate-200/85 mt-0.5 leading-snug">
+                Command the dusk lavender host from the North side &amp; counter-strike.
+              </p>
+            </div>
           </div>
-          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 shrink-0">
-            <button id="desk-w-btn" class="kbd-badge cursor-pointer hover:scale-105">W</button>
-            <button id="desk-s-btn" class="kbd-badge cursor-pointer hover:scale-105">S</button>
-            <span>Sky: <strong id="cycle-speed-ui" class="text-amber-500">1.0x</strong></span>
+        </div>
+
+        <!-- Custom Player Names Inputs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="spatial-input-group rounded-[16px] px-3 py-1.5 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-200 shrink-0 shadow-[0_0_6px_#fed7aa]"></span>
+            <div class="flex-1 min-w-0">
+              <label for="input-name-white" class="block text-[9px] font-mono-code uppercase tracking-wider text-orange-100/85">
+                Pearl (White) Name
+              </label>
+              <input
+                id="input-name-white"
+                type="text"
+                maxlength="16"
+                value="Pearl"
+                placeholder="Enter White Name..."
+                class="spatial-text-input w-full text-xs sm:text-sm font-semibold text-white bg-transparent border-none outline-none truncate"
+              />
+            </div>
           </div>
-          <button id="desk-e-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">E</span>
-            <span>Visitor</span>
+
+          <div class="spatial-input-group rounded-[16px] px-3 py-1.5 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-300 shrink-0 shadow-[0_0_6px_#e9d5ff]"></span>
+            <div class="flex-1 min-w-0">
+              <label for="input-name-black" class="block text-[9px] font-mono-code uppercase tracking-wider text-purple-200/85">
+                Lilac (Black) Name
+              </label>
+              <input
+                id="input-name-black"
+                type="text"
+                maxlength="16"
+                value="Lilac"
+                placeholder="Enter Black Name..."
+                class="spatial-text-input w-full text-xs sm:text-sm font-semibold text-white bg-transparent border-none outline-none truncate"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Choose Pastel Sanctuary Environment -->
+      <div class="text-left mb-4">
+        <div class="flex items-center justify-between mb-1.5 px-1">
+          <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+            <svg class="svg-icon text-pink-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>
+            </svg>
+            4. Select Pastel Sanctuary &amp; Board
+          </span>
+          <span class="text-[9px] sm:text-[10px] text-slate-300">Switchable anytime</span>
+        </div>
+
+        <div id="start-env-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+          <button data-env="cathedral" class="start-env-btn spatial-pill active-peach !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Cathedral</div>
+              <div class="text-[9px] opacity-75 truncate">Pearl &amp; Lilac</div>
+            </div>
           </button>
-          <button id="desk-b-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">B</span>
-            <span>Biome</span>
+
+          <button data-env="night" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Dream Night</div>
+              <div class="text-[9px] opacity-75 truncate">Periwinkle Moon</div>
+            </div>
           </button>
-          <button id="desk-c-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">C</span>
-            <span>Cam</span>
+
+          <button data-env="day" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Morning Sky</div>
+              <div class="text-[9px] opacity-75 truncate">Cloud Citadel</div>
+            </div>
           </button>
-          <button id="desk-m-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">M</span>
-            <span>Zoom: <strong id="desk-zoom-ui" class="text-sky-400">OFF</strong></span>
+
+          <button data-env="grass" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Mint Meadow</div>
+              <div class="text-[9px] opacity-75 truncate">Pastel Petals</div>
+            </div>
           </button>
-          <button id="desk-r-btn" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">R</span>
-            <span>Reload &amp; ♥: <strong id="desk-reload-ui" class="text-emerald-400">15.0s</strong></span>
+
+          <button data-env="ocean" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Aqua Lagoon</div>
+              <div class="text-[9px] opacity-75 truncate">Gentle Waves</div>
+            </div>
           </button>
-          <button id="desk-g-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">G</span>
-            <span>Mode: <strong id="desk-gfx-ui" class="text-emerald-400">HD</strong></span>
+
+          <button data-env="space" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Lilac Nebula</div>
+              <div class="text-[9px] opacity-75 truncate">Starlight Rings</div>
+            </div>
           </button>
-          <button id="desk-p-btn" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/25 transition cursor-pointer shrink-0">
-            <span class="kbd-badge">P</span>
-            <span>Pause</span>
-          </button>
-          <button data-hide-target="hud-desktop-dock" title="Hide Keyboard Controls Dock" class="hide-ui-chip ios-glass-pill transition-zone ml-1">
-            ✕
+
+          <button data-env="sand" class="start-env-btn spatial-pill !h-10 sm:!h-11 !rounded-2xl justify-start !px-2.5 col-span-2 w-full">
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-200 shrink-0"></span>
+            <div class="text-left leading-tight truncate">
+              <div class="text-[11px] font-bold truncate">Peach Blush Dunes</div>
+              <div class="text-[9px] opacity-75 truncate">Pastel Sandstone &amp; Rose Obelisks</div>
+            </div>
           </button>
         </div>
       </div>
 
+      <!-- Enter Sanctuary CTA -->
+      <button id="btn-launch-game" class="w-full py-2.5 sm:py-3 rounded-[18px] sm:rounded-[20px] font-gothic text-xs sm:text-base font-bold tracking-wider uppercase text-slate-900 bg-gradient-to-r from-rose-200 via-orange-100 to-sky-200 hover:from-rose-100 hover:to-sky-100 shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span>Enter Aetheria Sanctuary</span>
+      </button>
     </div>
   </div>
 
-  <!-- Three.js Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- =========================================================================
+       STRICTLY NON-OVERLAPPING, PROPORTIONAL TOP HUD BAR
+       ========================================================================= -->
+  <header id="top-hud-header" class="fixed top-0 left-0 right-0 z-20 pointer-events-none flex flex-col hud-header-shell">
+    <div class="w-full max-w-[1880px] mx-auto flex flex-col gap-1">
+
+      <!-- Top Row: Brand & Turn Status (Left) + Mobile Quick Utilities (Right) + Desktop Controls -->
+      <div class="w-full flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-1">
+
+        <!-- Row 1A: Brand + Turn Indicator (Left) AND Separate Mobile Quick Pill (Right) -->
+        <div class="w-full lg:w-auto flex items-center justify-between gap-1.5 pointer-events-auto min-w-0">
+
+          <!-- Left Pill: Brand + Turn Chip (Strictly separated with shrink-0 so texts NEVER overlap) -->
+          <div class="spatial-surface rounded-full hud-brand-bar flex items-center gap-1.5 min-w-0 flex-1 lg:flex-initial overflow-hidden">
+            <button id="btn-open-launcher" class="flex items-center gap-1.5 pr-1.5 border-r border-white/20 text-left shrink-0" title="Open Launcher, Side Selection, Names & Graphics Settings">
+              <div class="hud-logo-box rounded-xl bg-gradient-to-br from-rose-200/35 to-sky-200/35 border border-white/40 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 120 120" fill="none">
+                  <path d="M60 18 L74 42 L100 30 L86 72 L34 72 L20 30 L46 42 Z" fill="#fed7aa" />
+                  <rect x="30" y="78" width="60" height="12" rx="6" fill="#fbcfe8" />
+                </svg>
+              </div>
+              <div class="leading-tight shrink-0">
+                <div class="flex items-center gap-1">
+                  <span class="font-gothic hud-brand-title font-bold tracking-wider text-rose-100">AETHERIA</span>
+                  <span id="hud-device-badge" class="hud-micro-badge font-mono-code rounded-full bg-white/15 text-sky-100 border border-white/20">PC</span>
+                  <span id="hud-def-badge" class="hud-micro-badge font-mono-code rounded-full bg-emerald-300/20 text-emerald-100 border border-emerald-200/30">HD</span>
+                </div>
+                <p class="hud-sub-credit font-mono-code tracking-widest text-orange-100/90">MADE BY SOU.</p>
+              </div>
+            </button>
+
+            <!-- Turn Indicator Chip -->
+            <div id="turn-chip" class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 min-w-0 shrink">
+              <span id="turn-dot" class="w-2 h-2 rounded-full bg-orange-200 shadow-[0_0_8px_#fed7aa] shrink-0"></span>
+              <span id="turn-text" class="hud-turn-label font-semibold tracking-wide text-orange-100 truncate">Pearl's Turn</span>
+            </div>
+
+            <!-- Check / Checkmate Status Alert -->
+            <div id="status-badge" class="hidden items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-pink-300/30 border border-pink-200/60 text-pink-100 shrink-0">
+              <span id="status-badge-text">CHECK</span>
+            </div>
+          </div>
+
+          <!-- Right Pill (Mobile/Tablet): Completely Separate Surface so it NEVER overlaps Turn Text -->
+          <div class="flex lg:hidden items-center gap-1 spatial-surface rounded-full p-1 shrink-0">
+            <button id="btn-def-mobile" class="spatial-pill hud-pill-compact" title="Switch High / Low Def (2GB RAM Mode)">
+              <span id="label-def-mobile" class="font-mono-code text-emerald-100">HD</span>
+            </button>
+            <button id="btn-sound-mobile" class="spatial-pill active-peach hud-pill-compact" title="Toggle Audio">
+              <svg id="icon-sound-mobile" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            </button>
+            <button id="btn-history-mobile" class="spatial-pill hud-pill-compact" title="Toggle Chronicle">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <span id="move-count-badge-mobile" class="font-mono-code text-orange-100">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 1B: Primary Controls Strip (Horizontally scrollable & proportional so no button ever squishes or clips) -->
+        <nav aria-label="Primary Controls" class="spatial-surface rounded-full hud-nav-strip flex items-center gap-1 overflow-x-auto no-scrollbar smooth-scroll-x pointer-events-auto max-w-full">
+          <button id="btn-mode" class="spatial-pill active-sky hud-pill shrink-0" title="Toggle vs Automaton or 2P Pass & Play">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/>
+            </svg>
+            <span id="label-mode">vs Automaton</span>
+          </button>
+
+          <button id="btn-difficulty" class="spatial-pill hud-pill shrink-0" title="Cycle Automaton Intelligence">
+            <span id="label-difficulty">Adept</span>
+          </button>
+
+          <button id="btn-swap-sides" class="spatial-pill hud-pill shrink-0" title="Swap Your Side of the Board (Pearl / Lilac)">
+            <svg class="svg-icon text-purple-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>
+            </svg>
+            <span id="label-player-side" class="max-w-[92px] truncate">Side: Pearl</span>
+          </button>
+
+          <div class="h-3.5 w-[1px] bg-white/20 mx-0.5 shrink-0"></div>
+
+          <button id="btn-cam-white" class="spatial-pill active-peach hud-pill shrink-0" title="Pearl Camera View">
+            <span id="label-cam-white" class="max-w-[72px] truncate">Pearl</span>
+          </button>
+          <button id="btn-cam-black" class="spatial-pill hud-pill shrink-0" title="Lavender Camera View">
+            <span id="label-cam-black" class="max-w-[72px] truncate">Lilac</span>
+          </button>
+          <button id="btn-cam-top" class="spatial-pill hud-pill shrink-0" title="Overhead Tactical View">
+            <span>Top</span>
+          </button>
+          <button id="btn-cam-cinematic" class="spatial-pill active-sky hud-pill shrink-0" title="Toggle Action Camera on Captures">
+            <span>Action Cam</span>
+          </button>
+
+          <div class="h-3.5 w-[1px] bg-white/20 mx-0.5 shrink-0"></div>
+
+          <button id="btn-strike-demo" class="spatial-pill action-blush hud-pill shrink-0" title="Trigger Instant Capture & Shatter">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Strike</span>
+          </button>
+
+          <button id="btn-undo" class="spatial-pill hud-pill shrink-0" title="Undo Move" disabled>
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>
+            </svg>
+            <span class="hidden sm:inline">Undo</span>
+          </button>
+
+          <button id="btn-reset" class="spatial-pill hud-pill shrink-0" title="Reset Sanctuary">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+            </svg>
+            <span class="hidden sm:inline">Reset</span>
+          </button>
+
+          <button id="btn-def-toggle" class="spatial-pill hud-pill shrink-0 hidden lg:inline-flex" title="Toggle High Definition / Low Definition (2GB RAM Mode)">
+            <svg class="svg-icon text-emerald-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span id="label-def-desktop" class="font-mono-code text-emerald-100">HD</span>
+          </button>
+
+          <button id="btn-sound" class="spatial-pill active-peach hud-pill shrink-0 hidden lg:inline-flex" title="Toggle Audio">
+            <svg id="icon-sound" class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </button>
+
+          <button id="btn-history-toggle" class="spatial-pill hud-pill shrink-0 hidden lg:inline-flex" title="Toggle Chronicle">
+            <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span id="move-count-badge" class="font-mono-code text-orange-100">0</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Row 2: Realm Switcher Bar (Non-squished pills with smooth horizontal scroll) -->
+      <div class="w-full flex items-center pointer-events-none">
+        <div class="spatial-surface rounded-full hud-realm-strip flex items-center gap-1 overflow-x-auto no-scrollbar smooth-scroll-x max-w-full pointer-events-auto">
+          <span class="hud-realm-tag font-bold uppercase tracking-wider text-rose-100/90 px-1.5 shrink-0">
+            Realm:
+          </span>
+          <button data-env="cathedral" class="hud-env-btn spatial-pill active-peach hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-rose-200 shrink-0"></span>
+            <span>Cathedral</span>
+          </button>
+          <button data-env="night" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-indigo-200 shrink-0"></span>
+            <span>Dream Night</span>
+          </button>
+          <button data-env="day" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-sky-200 shrink-0"></span>
+            <span>Morning Sky</span>
+          </button>
+          <button data-env="grass" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-emerald-200 shrink-0"></span>
+            <span>Mint Meadow</span>
+          </button>
+          <button data-env="ocean" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-cyan-200 shrink-0"></span>
+            <span>Aqua Lagoon</span>
+          </button>
+          <button data-env="space" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-purple-200 shrink-0"></span>
+            <span>Lilac Nebula</span>
+          </button>
+          <button data-env="sand" class="hud-env-btn spatial-pill hud-realm-pill shrink-0">
+            <span class="w-2 h-2 rounded-full bg-orange-200 shrink-0"></span>
+            <span>Peach Dunes</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       SMARTPHONE TOUCH MODE: FLOATING D-PAD & CAMERA ORBIT BAR
+       (Preserved in DOM, hidden in Touch Mode because direct touch tap & orbit work natively)
+       ========================================================================= -->
+  <div id="mobile-touch-dock" class="fixed bottom-2.5 left-2.5 z-20 hidden items-end gap-2 pointer-events-auto touch-dock-retired">
+    <div class="spatial-surface rounded-[22px] p-2 flex flex-col items-center gap-1 shrink-0">
+      <div class="text-[8px] font-mono-code uppercase tracking-widest text-sky-100/80">Cursor</div>
+      <button data-dpad="up" class="spatial-pill dpad-btn" aria-label="Up">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+      </button>
+      <div class="flex items-center gap-1 shrink-0">
+        <button data-dpad="left" class="spatial-pill dpad-btn" aria-label="Left">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button data-dpad="select" class="spatial-pill active-peach dpad-act-btn font-bold text-[10px]">
+          ACT
+        </button>
+        <button data-dpad="right" class="spatial-pill dpad-btn" aria-label="Right">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+      <button data-dpad="down" class="spatial-pill dpad-btn" aria-label="Down">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="spatial-surface rounded-[18px] p-1.5 flex flex-col gap-1 shrink-0">
+      <button id="btn-touch-rot-left" class="spatial-pill dpad-aux-btn" title="Orbit Left">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+      <button id="btn-touch-rot-right" class="spatial-pill dpad-aux-btn" title="Orbit Right">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+      <button id="btn-touch-zoom" class="spatial-pill dpad-aux-btn" title="Toggle Zoom">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PC KEYBOARD HINT BAR (Bottom-Left)
+       ========================================================================= -->
+  <div id="pc-control-hint" class="fixed bottom-2.5 left-2.5 z-20 pointer-events-none hidden md:flex items-center gap-2 spatial-surface rounded-full px-3 py-1 text-[10px] sm:text-[11px] text-slate-100">
+    <span class="w-2 h-2 rounded-full bg-orange-200 shrink-0"></span>
+    <span class="truncate">
+      <strong class="text-orange-100">Controls:</strong> Click or <kbd class="px-1 py-0.5 rounded bg-white/15 font-mono-code text-[9px]">WASD/Arrows</kbd> + <kbd class="px-1 py-0.5 rounded bg-white/15 font-mono-code text-[9px]">Enter</kbd> • <kbd class="px-1 py-0.5 rounded bg-white/15 font-mono-code text-[9px]">Q/E</kbd> Orbit • <kbd class="px-1 py-0.5 rounded bg-white/15 font-mono-code text-[9px]">1-7</kbd> Realms
+    </span>
+  </div>
+
+  <!-- =========================================================================
+       COLLAPSIBLE MOVE CHRONICLE & SPOILS OVERLAY (Bottom-Right)
+       ========================================================================= -->
+  <aside id="history-panel" class="fixed bottom-2.5 right-2.5 z-30 w-64 sm:w-72 spatial-surface rounded-[24px] p-3 transition-all duration-300 transform translate-y-0 opacity-100 pointer-events-auto">
+    <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/15">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-pink-200"></span>
+        <div>
+          <h2 class="font-gothic text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-rose-100">Aetheria Chronicle</h2>
+          <p class="text-[8px] sm:text-[9px] font-mono-code text-slate-300" id="active-realm-label">Pastel Sanctuary</p>
+        </div>
+      </div>
+      <button id="btn-close-history" class="text-slate-200 hover:text-white transition p-1 rounded-full hover:bg-white/10" title="Minimize Chronicle">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-2 gap-1.5 mb-2 text-xs">
+      <div class="bg-white/10 rounded-xl p-1.5 border border-white/15">
+        <div class="text-[8px] sm:text-[9px] uppercase tracking-wider text-orange-100/90 mb-0.5 flex items-center justify-between gap-1">
+          <span id="spoils-title-white" class="truncate">Pearl Spoils</span>
+          <span id="captured-by-white" class="font-mono-code font-bold shrink-0">0</span>
+        </div>
+        <div id="graveyard-white" class="min-h-[16px] flex flex-wrap gap-0.5 text-xs leading-none text-purple-200">
+          <span class="text-[9px] text-slate-300/75 italic">None</span>
+        </div>
+      </div>
+      <div class="bg-white/10 rounded-xl p-1.5 border border-white/15">
+        <div class="text-[8px] sm:text-[9px] uppercase tracking-wider text-purple-200/90 mb-0.5 flex items-center justify-between gap-1">
+          <span id="spoils-title-black" class="truncate">Lilac Spoils</span>
+          <span id="captured-by-black" class="font-mono-code font-bold shrink-0">0</span>
+        </div>
+        <div id="graveyard-black" class="min-h-[16px] flex flex-wrap gap-0.5 text-xs leading-none text-orange-100">
+          <span class="text-[9px] text-slate-300/75 italic">None</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="move-list" class="max-h-24 overflow-y-auto pr-1 space-y-1 text-[10px] sm:text-[11px] font-mono-code smooth-scroll-container">
+      <div class="text-slate-200/80 italic text-center py-1.5 font-sans text-[10px]">Tap a piece or use WASD to begin.</div>
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       PAWN PROMOTION MODAL
+       ========================================================================= -->
+  <div id="promotion-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/50 backdrop-blur-md p-4">
+    <div class="spatial-modal rounded-[30px] p-6 max-w-sm w-full text-center">
+      <h3 class="font-gothic text-lg font-bold text-rose-100 tracking-wide mb-1">Rite of Ascension</h3>
+      <p class="text-xs text-slate-200 mb-4">Your Pawn has reached the eighth rank. Choose its ascended vessel:</p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button data-promo="q" class="promo-btn spatial-pill justify-center !h-11 !rounded-2xl active-peach">
+          <span class="text-base">♕</span>
+          <span class="font-semibold">Queen</span>
+        </button>
+        <button data-promo="r" class="promo-btn spatial-pill justify-center !h-11 !rounded-2xl">
+          <span class="text-base">♖</span>
+          <span class="font-semibold">Rook</span>
+        </button>
+        <button data-promo="b" class="promo-btn spatial-pill justify-center !h-11 !rounded-2xl">
+          <span class="text-base">♗</span>
+          <span class="font-semibold">Bishop</span>
+        </button>
+        <button data-promo="n" class="promo-btn spatial-pill justify-center !h-11 !rounded-2xl">
+          <span class="text-base">♘</span>
+          <span class="font-semibold">Knight</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       ENDGAME BANNER MODAL
+       ========================================================================= -->
+  <div id="gameover-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/55 backdrop-blur-md p-4 pointer-events-auto">
+    <div class="spatial-modal rounded-[32px] p-6 max-w-md w-full text-center">
+      <h2 id="gameover-title" class="font-gothic text-2xl font-extrabold text-rose-100 tracking-wider mb-1">Checkmate</h2>
+      <p class="text-[10px] font-mono-code tracking-widest text-orange-200 mb-3">AETHERIA • MADE BY SOU.</p>
+      <p id="gameover-subtitle" class="text-sm text-slate-100 mb-6">Pastel Pearl triumphs in the Sanctuary.</p>
+      <div class="flex items-center justify-center gap-3">
+        <button id="btn-modal-newgame" class="spatial-pill active-peach !h-10 !px-5 !text-xs font-semibold">
+          <span>Play Again</span>
+        </button>
+        <button id="btn-modal-close" class="spatial-pill !h-10 !px-5 !text-xs">
+          <span>Inspect Board</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       MAIN APPLICATION SCRIPT
+       ========================================================================= -->
   <script type="module" src="./main.js"></script>
 </body>
 </html>
