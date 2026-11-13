@@ -136,6 +136,87 @@ class SoundEngine {
     });
   }
 
+  playDiamond() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [783.99, 1046.50, 1318.51, 1567.98];
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      const start = now + i * 0.045;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.15, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.22);
+    });
+  }
+
+  playShieldDrop() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [440, 554.37, 659.25, 880, 1108.73];
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const start = now + i * 0.05;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.13, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.28);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.28);
+    });
+  }
+
+  playShieldBlock() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(960, now + 0.18);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  }
+
+  playRevive() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98];
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const start = now + i * 0.055;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.16, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.32);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.32);
+    });
+  }
+
   playReload() {
     if (this.muted) return;
     this.init();
@@ -269,6 +350,7 @@ const BOUNDARY_X = 16;
 const PLAYER_Z = 13;
 const SPAWN_Z = -95;
 const BULLET_MAX_Z = -108;
+const DIAMOND_REVIVE_COST = 3;
 
 const BIOMES = ['Grass', 'Ground', 'Rock', 'Underwater', 'Sky'];
 const ENEMY_TYPES = ['Zombies', 'Alien Ships', 'Skeletons', 'Ghosts', 'Entities'];
@@ -323,14 +405,20 @@ const ENEMY_DRESS_PRESETS = [
   { name: 'Imperial Violet & Coral', primary: 0x7c3aed, secondary: 0x2e1065, accent: 0xfb7185 }
 ];
 
+// Auto-detect low-memory (<= 2GB RAM) hardware as initial default if no preference was saved
+const detectedLowRam = (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory <= 2);
+const savedGfxPref = localStorage.getItem('novashot_gfx_mode') || (detectedLowRam ? 'ld' : 'hd');
+
 const state = {
   gameStarted: false,
   isPaused: false,
   isDead: false,
   isCountingDown: false,
+  isModalScrolling: false,
   countdownValue: 0,
   enemyGraceTimer: 0,
   deviceMode: 'desktop',
+  graphicsMode: savedGfxPref === 'ld' ? 'ld' : 'hd', // 'hd' (High Def) | 'ld' (Low Def 2GB RAM Smooth)
   uiTheme: 'light', // 'light' | 'dark'
   cameraModeIndex: 0,
   isMagnified: false,
@@ -344,6 +432,9 @@ const state = {
   health: 6,
   ammo: 40,
   fruitsEaten: 0,
+  diamondsRun: 0,
+  diamondsBank: Number(localStorage.getItem('novashot_diamonds_bank') || 6), // Stored across games & sessions
+  aegisShields: Number(localStorage.getItem('novashot_shields_bank') || 1), // Special accident-prevention shields
   bulletsFired: 0,
   enemiesKilled: 0,
   daysSurvived: 1,
@@ -373,17 +464,23 @@ const state = {
   touchFire: false,
   lastShotTime: 0,
   spawnTimer: 0,
-  ammoSpawnTimer: 0
+  ammoSpawnTimer: 0,
+  diamondSpawnTimer: 0,
+  shieldSpawnTimer: 0
 };
 
 // =========================================================================
-// 2. THREE.JS SCENE, CAMERA & RENDERER
+// 2. THREE.JS SCENE, CAMERA, RENDERER & 2GB RAM GRAPHICS ENGINE
 // =========================================================================
 const canvas = document.getElementById('game-canvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: state.graphicsMode === 'hd',
+  powerPreference: 'high-performance'
+});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+renderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = state.graphicsMode === 'hd';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.95;
@@ -457,7 +554,7 @@ scene.add(hemiLight);
 
 const dirLight = new THREE.DirectionalLight(0xfff5eb, 0.8);
 dirLight.position.set(28, 48, -18);
-dirLight.castShadow = true;
+dirLight.castShadow = state.graphicsMode === 'hd';
 dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
 dirLight.shadow.camera.left = -38;
@@ -560,25 +657,27 @@ function rebuildBiomeScenery(biomeName) {
   const mat1 = new THREE.MeshStandardMaterial({ color: cfg.propColor1, roughness: 0.55 });
   const mat2 = new THREE.MeshStandardMaterial({ color: cfg.propColor2, roughness: 0.55 });
   const trunkMat = new THREE.MeshStandardMaterial({ color: cfg.trunkColor, roughness: 0.7 });
+  const stepZ = state.graphicsMode === 'ld' ? 14 : 9;
+  const castShad = state.graphicsMode === 'hd';
 
-  for (let z = -96; z <= 14; z += 9) {
+  for (let z = -96; z <= 14; z += stepZ) {
     [-BOUNDARY_X - 4.2, BOUNDARY_X + 4.2].forEach((xBase, sideIdx) => {
       const xPos = xBase + (Math.random() - 0.5) * 1.8;
       const prop = new THREE.Group();
       if (biomeName === 'Grass') {
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.2, 12), trunkMat); trunk.position.y = 1.1; trunk.castShadow = true; prop.add(trunk);
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.2, 12), trunkMat); trunk.position.y = 1.1; trunk.castShadow = castShad; prop.add(trunk);
         const foliageMat = (Math.abs(z) + sideIdx) % 2 === 0 ? mat1 : mat2;
-        const cone1 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.8, 16), foliageMat); cone1.position.y = 3.0; cone1.castShadow = true;
-        const cone2 = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.2, 16), foliageMat); cone2.position.y = 4.4; cone2.castShadow = true;
+        const cone1 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 2.8, 16), foliageMat); cone1.position.y = 3.0; cone1.castShadow = castShad;
+        const cone2 = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.2, 16), foliageMat); cone2.position.y = 4.4; cone2.castShadow = castShad;
         prop.add(cone1, cone2);
       } else if (biomeName === 'Ground') {
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 3.6, 16), mat1); body.position.y = 1.8; body.castShadow = true;
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 3.6, 16), mat1); body.position.y = 1.8; body.castShadow = castShad;
         const cap = new THREE.Mesh(new THREE.SphereGeometry(0.65, 16, 16), mat1); cap.position.y = 3.6;
         const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.38, 12, 12), mat2); blossom.position.y = 4.2;
         prop.add(body, cap, blossom);
       } else if (biomeName === 'Rock') {
         const h = 3.2 + Math.random() * 2.5;
-        const crystal = new THREE.Mesh(new THREE.CylinderGeometry(0, 1.1, h, 6), mat1); crystal.position.y = h / 2; crystal.castShadow = true;
+        const crystal = new THREE.Mesh(new THREE.CylinderGeometry(0, 1.1, h, 6), mat1); crystal.position.y = h / 2; crystal.castShadow = castShad;
         const subCrystal = new THREE.Mesh(new THREE.CylinderGeometry(0, 0.7, h * 0.65, 6), mat2); subCrystal.position.set(0.7, (h * 0.65) / 2, 0.4); subCrystal.rotation.z = -0.2;
         prop.add(crystal, subCrystal);
       } else if (biomeName === 'Underwater') {
@@ -613,6 +712,21 @@ function applyBiome(index) {
 const player = new THREE.Group();
 player.position.set(0, 0, PLAYER_Z);
 scene.add(player);
+
+// 3D Special Accident-Prevention Aegis Shield Aura around the player
+const playerAegisAuraGroup = new THREE.Group();
+const aegisShellMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(1.65, 24, 24),
+  new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.16, wireframe: false })
+);
+aegisShellMesh.position.y = 1.45;
+const aegisOrbitRing = new THREE.Mesh(
+  new THREE.TorusGeometry(1.48, 0.045, 12, 36),
+  new THREE.MeshBasicMaterial({ color: 0x6ee7b7, transparent: true, opacity: 0.72 })
+);
+aegisOrbitRing.rotation.x = Math.PI / 2;
+aegisOrbitRing.position.y = 1.35;
+playerAegisAuraGroup.add(aegisShellMesh, aegisOrbitRing);
 
 const sharedAntennaGroup = new THREE.Group();
 sharedAntennaGroup.position.set(0, 3.15, 0);
@@ -1004,6 +1118,8 @@ function populateRangerGroup(targetGroup, includeSharedBlaster = true) {
 
   if (includeSharedBlaster) {
     targetGroup.add(sharedBlasterGroup);
+    targetGroup.add(playerAegisAuraGroup);
+    playerAegisAuraGroup.visible = state.aegisShields > 0;
   } else {
     const previewBlaster = sharedBlasterGroup.clone();
     previewBlaster.position.set(0.82, 1.32, -0.55);
@@ -1158,9 +1274,9 @@ function rgbToHex(rgbStr) {
 // 360° Preview Room Setup
 const previewContainer = document.getElementById('avatar-preview-container');
 const previewCanvas = document.getElementById('avatar-preview-canvas');
-const previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, antialias: true, alpha: true });
-previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-previewRenderer.shadowMap.enabled = true;
+const previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, antialias: state.graphicsMode === 'hd', alpha: true });
+previewRenderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio, 2));
+previewRenderer.shadowMap.enabled = state.graphicsMode === 'hd';
 previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
 previewRenderer.toneMappingExposure = 0.92;
 
@@ -1241,7 +1357,7 @@ document.getElementById('avatar-autospin-btn').addEventListener('click', () => {
 });
 
 // =========================================================================
-// 8. ENTITIES, PICKUPS & ENEMIES
+// 8. ENTITIES, PICKUPS (FRUIT, AMMO, CREDIT DIAMONDS, SPECIAL SHIELDS) & ENEMIES
 // =========================================================================
 const enemies = []; const projectiles = []; const pickups = []; const particles = []; const shockwaves = [];
 const sharedVoxelGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -1253,26 +1369,27 @@ function buildEnemyMesh(type) {
   const primaryMat = new THREE.MeshStandardMaterial({ color: dressPreset.primary, roughness: 0.35 });
   const secondaryMat = new THREE.MeshStandardMaterial({ color: dressPreset.secondary, roughness: 0.4 });
   const accentMat = new THREE.MeshStandardMaterial({ color: dressPreset.accent, roughness: 0.25 });
+  const castShad = state.graphicsMode === 'hd';
 
   if (type === 'Zombies') {
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.9, 20), secondaryMat); base.position.y = 0.45; base.castShadow = true; group.add(base);
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.58, 1.1, 20), primaryMat); torso.position.y = 1.35; torso.castShadow = true; group.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 24), new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })); head.position.y = 2.45; head.castShadow = true; group.add(head);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.9, 20), secondaryMat); base.position.y = 0.45; base.castShadow = castShad; group.add(base);
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.58, 1.1, 20), primaryMat); torso.position.y = 1.35; torso.castShadow = castShad; group.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 24), new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })); head.position.y = 2.45; head.castShadow = castShad; group.add(head);
     const eyeGeo = new THREE.SphereGeometry(0.13, 12, 12); const eyeMat = new THREE.MeshBasicMaterial({ color: dressPreset.accent });
     const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.24, 2.52, 0.62); const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.24, 2.52, 0.62); group.add(leftEye, rightEye);
   } else if (type === 'Alien Ships') {
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.75, 0.42, 28), primaryMat); disc.position.y = 1.85; disc.castShadow = true; group.add(disc);
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.75, 0.42, 28), primaryMat); disc.position.y = 1.85; disc.castShadow = castShad; group.add(disc);
     const glowRim = new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.12, 16, 36), accentMat); glowRim.rotation.x = Math.PI / 2; glowRim.position.y = 1.82; group.add(glowRim);
     const glassDome = new THREE.Mesh(new THREE.SphereGeometry(0.95, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xcaffbf, roughness: 0.15, transparent: true, opacity: 0.85 })); glassDome.position.y = 2.02; group.add(glassDome);
   } else if (type === 'Skeletons') {
-    const ribcage = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.5), primaryMat); ribcage.position.y = 1.4; ribcage.castShadow = true; group.add(ribcage);
+    const ribcage = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.5), primaryMat); ribcage.position.y = 1.4; ribcage.castShadow = castShad; group.add(ribcage);
     const skull = new THREE.Mesh(new THREE.SphereGeometry(0.6, 20, 20), secondaryMat); skull.position.y = 2.4; group.add(skull);
     const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.2, 0.4), accentMat); jaw.position.set(0, 2.05, 0.25); group.add(jaw);
   } else if (type === 'Ghosts') {
-    const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.2, 20), primaryMat); cloak.position.y = 1.2; cloak.castShadow = true; group.add(cloak);
+    const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.2, 20), primaryMat); cloak.position.y = 1.2; cloak.castShadow = castShad; group.add(cloak);
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.65, 20, 20), accentMat); head.position.y = 2.1; group.add(head);
   } else {
-    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 1), accentMat); core.position.y = 1.6; core.castShadow = true; group.add(core);
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 1), accentMat); core.position.y = 1.6; core.castShadow = castShad; group.add(core);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.08, 16, 32), primaryMat); ring.rotation.x = Math.PI / 3; ring.position.y = 1.6; group.add(ring);
   }
   return group;
@@ -1290,14 +1407,13 @@ function spawnEnemy() {
 
 function spawnFruit() {
   const fruitGroup = new THREE.Group();
-  const berry = new THREE.Mesh(new THREE.SphereGeometry(0.65, 24, 24), new THREE.MeshStandardMaterial({ color: 0xff758f, roughness: 0.25 })); berry.position.y = 0.95; berry.castShadow = true;
+  const berry = new THREE.Mesh(new THREE.SphereGeometry(0.65, 24, 24), new THREE.MeshStandardMaterial({ color: 0xff758f, roughness: 0.25 })); berry.position.y = 0.95; berry.castShadow = state.graphicsMode === 'hd';
   const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })); leaf.position.set(0.12, 1.65, 0); leaf.rotation.z = -0.4;
   const aura = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 12, 32), new THREE.MeshBasicMaterial({ color: 0xffd6a5 })); aura.rotation.x = Math.PI / 2; aura.position.y = 0.2;
   fruitGroup.add(berry, leaf, aura);
 
   const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
   if (isSwivel) {
-    // In Fixed Swivel mode, spawn fruit in a close forward arc near the player so they can shoot it or absorb it via Reload (R)
     const angleSpread = (Math.random() - 0.5) * 1.15;
     const dist = 7.5 + Math.random() * 5.5;
     const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
@@ -1319,7 +1435,6 @@ function spawnAmmoPack() {
 
   const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
   if (isSwivel) {
-    // In Fixed Swivel mode, spawn ammo capsule in a close forward arc near the player
     const angleSpread = (Math.random() - 0.5) * 1.2;
     const dist = 8.0 + Math.random() * 6.0;
     const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
@@ -1332,14 +1447,113 @@ function spawnAmmoPack() {
   scene.add(ammoGroup); pickups.push({ mesh: ammoGroup, kind: 'ammo' });
 }
 
+// Spawn Credit Orbs / Diamonds (💎) — Stored persistently across games & used to Revive on death
+function spawnDiamondOrb(customX = null) {
+  const diamondGroup = new THREE.Group();
+  const crystalMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.45,
+    roughness: 0.12,
+    metalness: 0.65
+  });
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.68, 0), crystalMat);
+  gem.position.y = 1.05;
+  gem.scale.set(0.9, 1.25, 0.9);
+  const innerOrb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.32, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
+  );
+  innerOrb.position.y = 1.05;
+  const haloRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.82, 0.06, 10, 28),
+    new THREE.MeshBasicMaterial({ color: 0x7dd3fc })
+  );
+  haloRing.rotation.x = Math.PI / 2;
+  haloRing.position.y = 0.25;
+  diamondGroup.add(gem, innerOrb, haloRing);
+
+  const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
+  if (isSwivel) {
+    const angleSpread = (Math.random() - 0.5) * 1.15;
+    const dist = 7.8 + Math.random() * 5.8;
+    const spawnX = customX !== null
+      ? THREE.MathUtils.clamp(customX, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5)
+      : THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
+    const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
+    diamondGroup.position.set(spawnX, 0.35, spawnZ);
+  } else {
+    const spawnX = customX !== null
+      ? THREE.MathUtils.clamp(customX, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5)
+      : (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
+    diamondGroup.position.set(spawnX, 0, PLAYER_Z);
+  }
+  scene.add(diamondGroup);
+  pickups.push({ mesh: diamondGroup, kind: 'diamond' });
+}
+
+// Spawn Special Accident-Prevention Aegis Shield Drop (🛡️)
+function spawnSpecialShieldDrop() {
+  const shieldGroup = new THREE.Group();
+  const coreShield = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.62, 1),
+    new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      emissive: 0x059669,
+      emissiveIntensity: 0.45,
+      roughness: 0.18,
+      metalness: 0.5
+    })
+  );
+  coreShield.position.y = 1.05;
+  const outerRing1 = new THREE.Mesh(
+    new THREE.TorusGeometry(0.86, 0.07, 12, 28),
+    new THREE.MeshBasicMaterial({ color: 0x6ee7b7 })
+  );
+  outerRing1.position.y = 1.05;
+  const outerRing2 = new THREE.Mesh(
+    new THREE.TorusGeometry(0.86, 0.05, 12, 28),
+    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+  );
+  outerRing2.rotation.x = Math.PI / 2;
+  outerRing2.position.y = 0.22;
+  shieldGroup.add(coreShield, outerRing1, outerRing2);
+
+  const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
+  if (isSwivel) {
+    const angleSpread = (Math.random() - 0.5) * 1.1;
+    const dist = 8.0 + Math.random() * 5.2;
+    const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
+    const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
+    shieldGroup.position.set(spawnX, 0.35, spawnZ);
+  } else {
+    let spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
+    if (Math.abs(spawnX - player.position.x) < 3.0) spawnX = -spawnX;
+    shieldGroup.position.set(spawnX, 0, PLAYER_Z);
+  }
+  scene.add(shieldGroup);
+  pickups.push({ mesh: shieldGroup, kind: 'shield' });
+}
+
+function persistVaultCurrencies() {
+  try {
+    localStorage.setItem('novashot_diamonds_bank', String(state.diamondsBank));
+    localStorage.setItem('novashot_shields_bank', String(state.aegisShields));
+  } catch (err) {
+    console.warn('Unable to persist vault currencies:', err);
+  }
+}
+
 function spawnVoxelExplosion(pos, palette, count = 25, withShockwave = true) {
   const colorList = Array.isArray(palette) ? palette : [palette];
-  for (let i = 0; i < count; i++) {
+  const effectiveCount = state.graphicsMode === 'ld' ? Math.max(6, Math.round(count * 0.38)) : count;
+  const castShad = state.graphicsMode === 'hd';
+  for (let i = 0; i < effectiveCount; i++) {
     const chosenColor = colorList[Math.floor(Math.random() * colorList.length)];
     const size = 0.24 + Math.random() * 0.28;
     const voxelMat = new THREE.MeshStandardMaterial({ color: chosenColor, roughness: 0.35, metalness: 0.1 });
     const voxel = new THREE.Mesh(sharedVoxelGeo, voxelMat);
-    voxel.scale.setScalar(size); voxel.position.set(pos.x + (Math.random() - 0.5) * 0.9, Math.max(0.4, pos.y + 0.9 + (Math.random() - 0.5) * 0.8), pos.z + (Math.random() - 0.5) * 0.9); voxel.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI); voxel.castShadow = true; scene.add(voxel);
+    voxel.scale.setScalar(size); voxel.position.set(pos.x + (Math.random() - 0.5) * 0.9, Math.max(0.4, pos.y + 0.9 + (Math.random() - 0.5) * 0.8), pos.z + (Math.random() - 0.5) * 0.9); voxel.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI); voxel.castShadow = castShad; scene.add(voxel);
     const angle = Math.random() * Math.PI * 2; const horizSpeed = 3.5 + Math.random() * 9.5;
     particles.push({ mesh: voxel, baseSize: size, vel: new THREE.Vector3(Math.cos(angle) * horizSpeed, 4.5 + Math.random() * 8.5, Math.sin(angle) * horizSpeed), rotVel: new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14), life: 1.0, decay: 0.75 + Math.random() * 0.45 });
   }
@@ -1395,40 +1609,97 @@ function shootBullet() {
 }
 
 // =========================================================================
-// 9. THEME TRANSITION, HIDE/UNHIDE & ANNOUNCEMENT CAPSULE
+// 9. SMOOTH THEME TRANSITION, GRAPHICS ENGINE, HIDE/UNHIDE & CAPSULE
 // =========================================================================
-let themeTransitionOverlay = null;
+let themeCurtainTimer = null;
 function triggerUpperLeftToLowerRightTransition(targetTheme) {
   if (targetTheme !== 'dark' && targetTheme !== 'light') return;
   if (state.uiTheme === targetTheme) return;
 
-  // A single viewport-level fade is much cheaper than animating clip-paths
-  // inside every glass panel, especially while the setup card is scrolling.
-  if (themeTransitionOverlay) {
-    themeTransitionOverlay.remove();
-    themeTransitionOverlay = null;
+  const curtain = document.getElementById('smooth-theme-curtain');
+  if (curtain) {
+    curtain.classList.remove('sweep-to-dark', 'sweep-to-light');
+    // Force clean GPU layer restyle without layout thrashing
+    void curtain.offsetWidth;
+    curtain.classList.add(targetTheme === 'dark' ? 'sweep-to-dark' : 'sweep-to-light');
+    clearTimeout(themeCurtainTimer);
+    themeCurtainTimer = setTimeout(() => {
+      curtain.classList.remove('sweep-to-dark', 'sweep-to-light');
+    }, 500);
   }
-  const overlay = document.createElement('div');
-  overlay.id = 'theme-transition-overlay';
-  overlay.className = targetTheme === 'dark' ? 'to-dark' : 'to-light';
-  themeTransitionOverlay = overlay;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('animationend', () => {
-    if (themeTransitionOverlay === overlay) themeTransitionOverlay = null;
-    overlay.remove();
-  }, { once: true });
 
-  document.body.classList.toggle('theme-dark', targetTheme === 'dark');
-  document.body.classList.toggle('theme-light', targetTheme === 'light');
-  state.uiTheme = targetTheme;
-  document.getElementById('hud-theme-label').textContent = targetTheme === 'dark' ? 'Dark' : 'White';
-  document.getElementById('init-theme-text').textContent = targetTheme === 'dark' ? 'Dark UI' : 'White UI';
-  document.getElementById('init-theme-icon').textContent = targetTheme === 'dark' ? '🌙' : '☀️';
+  requestAnimationFrame(() => {
+    document.body.classList.toggle('theme-dark', targetTheme === 'dark');
+    document.body.classList.toggle('theme-light', targetTheme === 'light');
+    state.uiTheme = targetTheme;
+    document.getElementById('hud-theme-label').textContent = targetTheme === 'dark' ? 'Dark' : 'White';
+    document.getElementById('init-theme-text').textContent = targetTheme === 'dark' ? 'Dark UI' : 'White UI';
+    document.getElementById('init-theme-icon').textContent = targetTheme === 'dark' ? '🌙' : '☀️';
 
-  document.querySelectorAll('.step2-theme-btn, .pause-theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === targetTheme);
+    document.querySelectorAll('.step2-theme-btn, .pause-theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === targetTheme);
+    });
   });
+
   sfx.playUI(1.2);
+}
+
+// Switch between High Definition (HD) & Low Definition (2GB RAM Smooth Mode)
+function applyGraphicsDefinitionMode(mode, announce = true) {
+  const target = mode === 'ld' ? 'ld' : 'hd';
+  state.graphicsMode = target;
+  document.body.classList.toggle('gfx-ld', target === 'ld');
+  document.body.classList.toggle('gfx-hd', target === 'hd');
+  document.body.dataset.gfxMode = target;
+
+  try {
+    localStorage.setItem('novashot_gfx_mode', target);
+  } catch (e) {}
+
+  const dpr = target === 'ld' ? 1.0 : Math.min(window.devicePixelRatio || 1, 2);
+  renderer.setPixelRatio(dpr);
+  renderer.shadowMap.enabled = target === 'hd';
+  dirLight.castShadow = target === 'hd';
+  previewRenderer.setPixelRatio(dpr);
+
+  // Sync Initiation Screen & HUD & Pause UI Indicators
+  const hdBtn = document.getElementById('select-hd-btn');
+  const ldBtn = document.getElementById('select-ld-btn');
+  const badge = document.getElementById('gfx-selected-badge');
+  const hdCheck = document.getElementById('hd-check-indicator');
+  const ldCheck = document.getElementById('ld-check-indicator');
+  const quickIcon = document.getElementById('init-gfx-pill-icon');
+  const quickText = document.getElementById('init-gfx-pill-text');
+  const hudGfxLabel = document.getElementById('hud-gfx-label');
+  const deskGfxUi = document.getElementById('desk-gfx-ui');
+
+  if (hdBtn && ldBtn) {
+    hdBtn.classList.toggle('selected-device', target === 'hd');
+    ldBtn.classList.toggle('selected-device', target === 'ld');
+  }
+  if (badge) {
+    badge.textContent = target === 'hd' ? '✨ High Definition Active' : '⚡ Low Definition (2GB RAM Smooth)';
+  }
+  if (hdCheck) hdCheck.textContent = target === 'hd' ? '● Selected' : '○ Choose Mode';
+  if (ldCheck) ldCheck.textContent = target === 'ld' ? '● Selected' : '○ Choose Mode';
+  if (quickIcon) quickIcon.textContent = target === 'hd' ? '✨' : '⚡';
+  if (quickText) quickText.textContent = target === 'hd' ? 'HD Mode' : 'LD Smooth';
+  if (hudGfxLabel) hudGfxLabel.textContent = target === 'hd' ? 'HD' : 'LD';
+  if (deskGfxUi) deskGfxUi.textContent = target === 'hd' ? 'HD' : 'LD';
+
+  document.querySelectorAll('.pause-gfx-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.gfx === target);
+  });
+
+  rebuildBiomeScenery(BIOMES[state.biomeIndex]);
+  syncViewportDimensions();
+
+  if (announce) {
+    sfx.playUI(target === 'hd' ? 1.2 : 1.05);
+    showToast(target === 'hd'
+      ? '✨ High Definition (HD) Mode Enabled!'
+      : '⚡ Low Definition (2GB RAM Smooth Mode) Enabled!');
+  }
 }
 
 let toastTimer = null;
@@ -1493,6 +1764,7 @@ function hideUiPanel(targetId) {
     el.classList.add('ui-hidden-panel');
     sfx.playUI(0.85);
     updateUnhideAllButtonState();
+    syncNonOverlappingUiScale();
   }
 }
 
@@ -1502,6 +1774,7 @@ function unhideAllUiPanels() {
   });
   sfx.playUI(1.25);
   updateUnhideAllButtonState();
+  syncNonOverlappingUiScale();
   showToast('👁️ All UI Panels Restored Successfully!');
 }
 
@@ -1551,7 +1824,7 @@ function updateTopHudAlignment() {
 }
 
 // =========================================================================
-// 10. GAMEPLAY HELPERS, SCORE, PAUSE & YOU DIED MODALS
+// 10. GAMEPLAY HELPERS, SCORE, ACCIDENT SHIELD, REVIVE & PAUSE MODALS
 // =========================================================================
 function adjustEnemySpeed(delta) {
   state.enemySpeedMult = Math.max(0.3, Math.min(3.5, +(state.enemySpeedMult + delta).toFixed(1)));
@@ -1577,7 +1850,6 @@ function setCameraMode(idx) {
   const modeObj = CAMERA_MODES[state.cameraModeIndex];
   const modeName = modeObj.name;
   if (modeObj.isFixedSwivel) {
-    // Lock camera at the exact place it is invoked
     state.fixedPlayerInvokeX = player.position.x;
     state.fixedCamInvokePos.set(
       player.position.x,
@@ -1592,7 +1864,6 @@ function setCameraMode(idx) {
     player.rotation.y = 0;
   }
 
-  // Toggle visibility of Swivel Core HUD bar and Reload buttons
   const swivelBar = document.getElementById('swivel-core-bar-wrap');
   const touchReloadBtn = document.getElementById('touch-reload-btn');
   const deskRBtn = document.getElementById('desk-r-btn');
@@ -1614,6 +1885,7 @@ function setCameraMode(idx) {
   document.querySelectorAll('.step2-cam-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
   document.querySelectorAll('.pause-cam-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
   sfx.playUI(1.15);
+  syncNonOverlappingUiScale();
   showToast(modeObj.isFixedSwivel ? `🎥 ${modeName}: Press R / 🔄 Reload before 15s Core Timer expires!` : `🎥 Camera: ${modeName}`);
 }
 function cycleCameraMode() {
@@ -1662,13 +1934,13 @@ function triggerSwivelReload() {
   if (now - state.lastReloadTime < 900) return;
   state.lastReloadTime = now;
 
-  // Reset Core Overload Timer
   state.swivelCoreTimer = state.swivelCoreMax;
   state.swivelWarned = false;
 
-  // Absorb any spawned fruits or ammo capsules in the field & replenish gun + shield
   let absorbedFruits = 0;
   let absorbedAmmo = 0;
+  let absorbedDiamonds = 0;
+  let absorbedShields = 0;
   for (let i = pickups.length - 1; i >= 0; i--) {
     const p = pickups[i];
     if (!p || !p.mesh) continue;
@@ -1676,6 +1948,15 @@ function triggerSwivelReload() {
       absorbedFruits++;
       state.fruitsEaten++;
       spawnPastelBurst(p.mesh.position, [0xff758f, 0xffafcc, 0x95d5b2], 12);
+    } else if (p.kind === 'diamond') {
+      absorbedDiamonds++;
+      state.diamondsRun++;
+      state.diamondsBank++;
+      spawnPastelBurst(p.mesh.position, [0x38bdf8, 0x7dd3fc, 0xffffff], 12);
+    } else if (p.kind === 'shield') {
+      absorbedShields++;
+      state.aegisShields = Math.min(5, state.aegisShields + 1);
+      spawnPastelBurst(p.mesh.position, [0x10b981, 0x6ee7b7, 0xfef08a], 12);
     } else {
       absorbedAmmo++;
       spawnPastelBurst(p.mesh.position, [0xfdffb6, 0x9bf6ff, 0xffffff], 12);
@@ -1692,8 +1973,11 @@ function triggerSwivelReload() {
   state.health = Math.min(6, state.health + healAmount);
   const healed = state.health > prevHealth;
 
+  persistVaultCurrencies();
   sfx.playReload();
   if (healed) sfx.playFruit();
+  if (absorbedDiamonds > 0) sfx.playDiamond();
+  if (absorbedShields > 0) sfx.playShieldDrop();
   spawnPastelBurst(player.position, [0x34d399, 0x38bdf8, 0xfdffb6, 0xff758f], 18);
 
   updateSwivelCoreUI();
@@ -1728,11 +2012,16 @@ function togglePause(paused) {
   const pauseModal = document.getElementById('pause-modal');
   if (state.isPaused) {
     updateBestTimeRecord(true);
+    persistVaultCurrencies();
     pauseModal.classList.remove('hidden-modal');
     document.getElementById('pause-curr-score').textContent = state.score;
     document.getElementById('pause-best-score').textContent = state.highScore;
     document.getElementById('pause-curr-time').textContent = formatStopwatch(state.sessionTime);
     document.getElementById('pause-best-time').textContent = formatStopwatch(state.bestTime);
+    const pauseDiamondEl = document.getElementById('pause-diamonds-bank');
+    const pauseAegisEl = document.getElementById('pause-aegis-count');
+    if (pauseDiamondEl) pauseDiamondEl.textContent = state.diamondsBank;
+    if (pauseAegisEl) pauseAegisEl.textContent = state.aegisShields;
     sfx.playUI(0.85);
   } else {
     pauseModal.classList.add('hidden-modal');
@@ -1740,8 +2029,27 @@ function togglePause(paused) {
   }
 }
 
+// Special Accident-Prevention Shield Check: Prevents Enemy Hits, Infiltrations & Core Overloads!
+function consumeAegisAccidentShield(accidentReason) {
+  if (state.aegisShields > 0) {
+    state.aegisShields--;
+    state.enemyGraceTimer = 1.5;
+    persistVaultCurrencies();
+    sfx.playShieldBlock();
+    spawnVoxelExplosion(player.position, [0x10b981, 0x6ee7b7, 0xfef08a, 0xffffff], 22, true);
+    updateHUD();
+    showToast(`🛡️ Aegis Shield Prevented Accident (${accidentReason})! ${state.aegisShields} Shield Left`);
+    return true;
+  }
+  return false;
+}
+
 function takeDamage(reason) {
   if (!state.gameStarted || state.isDead || state.isCountingDown) return;
+  // First check if a Special Accident-Prevention Shield is active
+  if (consumeAegisAccidentShield(reason)) {
+    return;
+  }
   state.health -= 1; spawnFruit(); spawnVoxelExplosion(player.position, [0xff758f, 0xffafcc, 0xbdb2ff, 0xffd6a5], 18, true);
   if (state.health <= 0) {
     triggerYouDied();
@@ -1754,18 +2062,73 @@ function takeDamage(reason) {
 function triggerYouDied(customMessage) {
   state.isDead = true;
   updateBestTimeRecord(true);
+  persistVaultCurrencies();
   sfx.playGameOver();
   document.getElementById('died-score-val').textContent = state.score;
   document.getElementById('died-best-val').textContent = state.highScore;
   document.getElementById('died-time-val').textContent = formatStopwatch(state.sessionTime);
+
+  const diedDiamondsEl = document.getElementById('died-diamonds-val');
+  const diedVaultEl = document.getElementById('died-vault-balance');
+  const reviveBtn = document.getElementById('died-diamond-revive-btn');
+  const subTextEl = document.getElementById('died-reason-subtext');
+
+  if (diedDiamondsEl) diedDiamondsEl.textContent = state.diamondsBank;
+  if (diedVaultEl) diedVaultEl.textContent = state.diamondsBank;
+  if (subTextEl) {
+    subTextEl.textContent = customMessage || 'Your high score, survival records, and collected diamonds have been safely archived.';
+  }
+  if (reviveBtn) {
+    const canRevive = state.diamondsBank >= DIAMOND_REVIVE_COST;
+    reviveBtn.disabled = !canRevive;
+    reviveBtn.style.opacity = canRevive ? '1' : '0.48';
+    reviveBtn.innerHTML = canRevive
+      ? `<span>💎 Revive &amp; Continue Run (Use ${DIAMOND_REVIVE_COST} 💎 • ${state.diamondsBank} Available)</span>`
+      : `<span>💎 Need ${DIAMOND_REVIVE_COST} Stored Diamonds to Revive (Vault: ${state.diamondsBank} 💎)</span>`;
+  }
+
   document.getElementById('you-died-modal').classList.remove('hidden-modal');
   showToast(customMessage || '💔 Pastel Shield Depleted — You Died');
+}
+
+// Revive using Stored Diamonds without losing current run Score, Time, or Day progress
+function reviveWithDiamonds() {
+  if (state.diamondsBank < DIAMOND_REVIVE_COST) {
+    sfx.playUI(0.65);
+    showToast(`💎 Collect ${DIAMOND_REVIVE_COST - state.diamondsBank} more Credit Diamond(s) to Revive!`);
+    return;
+  }
+  state.diamondsBank -= DIAMOND_REVIVE_COST;
+  state.aegisShields = Math.max(1, state.aegisShields + 1); // Grant bonus Aegis Shield on revive
+  persistVaultCurrencies();
+
+  document.getElementById('you-died-modal').classList.add('hidden-modal');
+  state.isDead = false;
+  state.health = 6;
+  state.ammo = Math.max(40, state.ammo + 25);
+  state.swivelCoreTimer = state.swivelCoreMax;
+  state.swivelWarned = false;
+  updateSwivelCoreUI();
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    scene.remove(enemies[i].mesh);
+    enemies.splice(i, 1);
+  }
+  state.enemyGraceTimer = 2.5;
+  sfx.playRevive();
+  spawnVoxelExplosion(player.position, [0x38bdf8, 0x10b981, 0xfef08a, 0xffffff], 26, true);
+  recalcScore();
+  updateHUD();
+  startCircularCountdown(() => {
+    sfx.playUI(1.35);
+    showToast('💎 Revived with Stored Diamonds! Score Preserved + 🛡️ Aegis Shield Active!');
+  }, 3);
 }
 
 function respawnGame() {
   document.getElementById('you-died-modal').classList.add('hidden-modal');
   state.isDead = false;
-  state.health = 6; state.ammo = 40; state.fruitsEaten = 0; state.bulletsFired = 0; state.enemiesKilled = 0; state.daysSurvived = 1; state.sessionTime = 0; state.score = 0;
+  state.health = 6; state.ammo = 40; state.fruitsEaten = 0; state.diamondsRun = 0; state.bulletsFired = 0; state.enemiesKilled = 0; state.daysSurvived = 1; state.sessionTime = 0; state.score = 0;
   state.swivelCoreTimer = state.swivelCoreMax;
   state.swivelWarned = false;
   updateSwivelCoreUI();
@@ -1803,7 +2166,7 @@ function updateBestTimeRecord(forcePersist = false) {
 }
 
 function recalcScore() {
-  state.score = (state.enemiesKilled * 50) + (state.fruitsEaten * 100) + (state.bulletsFired * 5) + (state.daysSurvived * 200);
+  state.score = (state.enemiesKilled * 50) + (state.fruitsEaten * 100) + (state.diamondsRun * 150) + (state.bulletsFired * 5) + (state.daysSurvived * 200);
   if (state.score > state.highScore) { state.highScore = state.score; localStorage.setItem('shoooter_highscore', String(state.highScore)); }
   updateBestTimeRecord();
   if (state.daysSurvived > state.bestDays) { state.bestDays = state.daysSurvived; localStorage.setItem('skyshift_best_days', String(state.bestDays)); }
@@ -1826,6 +2189,34 @@ function updateHUD() {
   document.getElementById('ammo-count').textContent = state.ammo;
   document.getElementById('kills-count').textContent = state.enemiesKilled;
   document.getElementById('health-text').textContent = `${state.health} / 6 HITS (${(state.health / 2).toFixed(1)} ♥)`;
+
+  // Update Credit Orbs / Diamonds & Special Accident Shield Counters
+  const menuDiamondsBank = document.getElementById('menu-diamonds-bank');
+  const menuShieldsBank = document.getElementById('menu-shields-bank');
+  const hudDiamondsRun = document.getElementById('diamonds-count');
+  const hudDiamondsBank = document.getElementById('diamonds-bank-hud');
+  const scoreCardDiamonds = document.getElementById('score-card-diamonds-val');
+  const aegisCountEl = document.getElementById('aegis-shield-count');
+  const aegisStatusEl = document.getElementById('aegis-shield-status');
+  const healthCardEl = document.getElementById('hud-health-card');
+
+  if (menuDiamondsBank) menuDiamondsBank.textContent = state.diamondsBank;
+  if (menuShieldsBank) menuShieldsBank.textContent = state.aegisShields;
+  if (hudDiamondsRun) hudDiamondsRun.textContent = state.diamondsRun;
+  if (hudDiamondsBank) hudDiamondsBank.textContent = `(Vault: ${state.diamondsBank})`;
+  if (scoreCardDiamonds) scoreCardDiamonds.textContent = state.diamondsBank;
+  if (aegisCountEl) aegisCountEl.textContent = state.aegisShields;
+  if (aegisStatusEl) {
+    aegisStatusEl.textContent = state.aegisShields > 0 ? 'PROTECTED' : 'STANDBY';
+    aegisStatusEl.className = state.aegisShields > 0
+      ? 'text-[9px] text-emerald-400 font-extrabold'
+      : 'text-[9px] text-slate-400 font-bold';
+  }
+  if (healthCardEl) {
+    healthCardEl.classList.toggle('aegis-shield-protected', state.aegisShields > 0);
+  }
+  playerAegisAuraGroup.visible = state.aegisShields > 0;
+
   const eSpd = `${state.enemySpeedMult.toFixed(1)}x`; const cSpd = `${state.cycleSpeedMult.toFixed(1)}x`;
   document.getElementById('enemy-speed-ui').textContent = eSpd; document.getElementById('cycle-speed-ui').textContent = cSpd;
   document.getElementById('touch-enemy-spd').textContent = eSpd; document.getElementById('touch-cycle-spd').textContent = cSpd;
@@ -1869,7 +2260,6 @@ function startCircularCountdown(onComplete, seconds = 3) {
     const progressFrac = remainingMs / totalDuration;
     arcEl.style.strokeDashoffset = String(circumference * (1 - progressFrac));
 
-    // Rotate the outer rim smoothly 360 degrees every 1000ms
     if (outerRimEl) {
       const deg = (elapsed / 1000) * 360;
       outerRimEl.style.transform = `rotate(${deg.toFixed(2)}deg)`;
@@ -1915,7 +2305,7 @@ const desktopControlsLayer = document.getElementById('desktop-controls-layer');
 
 function setDeviceMode(mode) {
   sfx.init(); sfx.playUI(1.2); state.deviceMode = mode;
-  document.querySelectorAll('#init-step-1 .device-card-btn').forEach(btn => btn.classList.remove('selected-device'));
+  document.querySelectorAll('#init-step-1 > div:first-child .device-card-btn').forEach(btn => btn.classList.remove('selected-device'));
   if (mode === 'touch') document.getElementById('select-touch-btn').classList.add('selected-device');
   else document.getElementById('select-desktop-btn').classList.add('selected-device');
   showToast(mode === 'touch' ? '📱 Touch Mode Selected' : '💻 Desktop Mode Selected');
@@ -1924,6 +2314,22 @@ function setDeviceMode(mode) {
 // Step 1 -> Step 2 Navigation
 document.getElementById('select-touch-btn').addEventListener('click', () => setDeviceMode('touch'));
 document.getElementById('select-desktop-btn').addEventListener('click', () => setDeviceMode('desktop'));
+
+// 1st Screen High / Low Definition Mode Selection Bindings
+document.getElementById('select-hd-btn').addEventListener('click', () => applyGraphicsDefinitionMode('hd', true));
+document.getElementById('select-ld-btn').addEventListener('click', () => applyGraphicsDefinitionMode('ld', true));
+document.getElementById('init-gfx-quick-pill').addEventListener('click', () => {
+  applyGraphicsDefinitionMode(state.graphicsMode === 'hd' ? 'ld' : 'hd', true);
+});
+document.getElementById('hud-gfx-btn').addEventListener('click', () => {
+  applyGraphicsDefinitionMode(state.graphicsMode === 'hd' ? 'ld' : 'hd', true);
+});
+document.getElementById('desk-g-btn').addEventListener('click', () => {
+  applyGraphicsDefinitionMode(state.graphicsMode === 'hd' ? 'ld' : 'hd', true);
+});
+document.querySelectorAll('.pause-gfx-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyGraphicsDefinitionMode(btn.dataset.gfx, true));
+});
 
 document.getElementById('step-1-next-btn').addEventListener('click', () => {
   sfx.playUI(1.15);
@@ -1946,7 +2352,7 @@ document.getElementById('step-2-back-btn').addEventListener('click', () => {
   document.getElementById('step-dot-2').className = 'w-2.5 h-2.5 rounded-full bg-slate-400/40';
   document.getElementById('step-dot-1').className = 'w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm';
   document.getElementById('step-label-text').textContent = 'Step 1 of 2';
-  document.getElementById('modal-subtitle').textContent = 'Part 1: Select your control hardware to calibrate precision targeting.';
+  document.getElementById('modal-subtitle').textContent = 'Part 1: Select your control hardware & graphics definition to calibrate precision targeting.';
 });
 
 // Final Launch Button
@@ -1967,6 +2373,7 @@ document.getElementById('initiate-game-btn').addEventListener('click', () => {
   }
 
   buildPlayerModel();
+  syncNonOverlappingUiScale();
   startCircularCountdown(() => { sfx.playUI(1.4); showToast('🚀 Novashot Started! 1s Grace Shield Active!'); }, 3);
 });
 
@@ -2084,19 +2491,23 @@ document.getElementById('hud-cam-btn').addEventListener('click', cycleCameraMode
 document.getElementById('pause-main-menu-btn').addEventListener('click', () => {
   sfx.playUI(0.9);
   updateBestTimeRecord(true);
+  persistVaultCurrencies();
   recalcScore();
+  updateHUD();
   state.isPaused = false;
   state.gameStarted = false;
   document.getElementById('pause-modal').classList.add('hidden-modal');
   deviceModal.classList.remove('hidden-modal');
-  showToast('🏠 Game Saved & Returned to Main Menu');
+  showToast('🏠 Game & Diamonds Saved — Returned to Main Menu');
 });
 
+document.getElementById('died-diamond-revive-btn').addEventListener('click', reviveWithDiamonds);
 document.getElementById('died-respawn-btn').addEventListener('click', respawnGame);
 document.getElementById('died-avatar-settings-btn').addEventListener('click', () => {
   document.getElementById('you-died-modal').classList.add('hidden-modal');
   state.isDead = false;
   state.gameStarted = false;
+  updateHUD();
   deviceModal.classList.remove('hidden-modal');
 });
 
@@ -2165,6 +2576,7 @@ window.addEventListener('keydown', (e) => {
   else if (e.code === 'KeyC') cycleCameraMode();
   else if (e.code === 'KeyM') toggleMagnifyEnemy();
   else if (e.code === 'KeyR') triggerSwivelReload();
+  else if (e.code === 'KeyG') applyGraphicsDefinitionMode(state.graphicsMode === 'hd' ? 'ld' : 'hd', true);
   else if (e.code === 'KeyA') adjustEnemySpeed(0.2);
   else if (e.code === 'KeyD') adjustEnemySpeed(-0.2);
   else if (e.code === 'KeyW') adjustCycleSpeed(0.25);
@@ -2178,6 +2590,22 @@ window.addEventListener('keydown', (e) => {
   else if (e.code === 'KeyB') toggleBiome();
 });
 window.addEventListener('keyup', (e) => { state.keys[e.code] = false; });
+
+// Scroll Lag Elimination: Pause heavy 3D background draws while user actively scrolls modal cards
+let modalScrollTimeout = null;
+document.querySelectorAll('.modal-fit-card, .modal-backdrop').forEach(scroller => {
+  scroller.addEventListener('scroll', () => {
+    if (!state.isModalScrolling) {
+      state.isModalScrolling = true;
+      document.body.classList.add('is-scrolling-modal');
+    }
+    clearTimeout(modalScrollTimeout);
+    modalScrollTimeout = setTimeout(() => {
+      state.isModalScrolling = false;
+      document.body.classList.remove('is-scrolling-modal');
+    }, 120);
+  }, { passive: true });
+});
 
 // =========================================================================
 // 13. SMOOTH CAMERA CONTROLLER & AIM POINTER UPDATER
@@ -2201,7 +2629,6 @@ function findMagnifyTargetEnemy() {
     const forwardDist = -(dx * dir.x + dz * dir.z);
     if (forwardDist <= 0) continue;
     const lateralDist = Math.abs(dx * dir.z - dz * dir.x);
-    // Prioritize enemies aligned with player's aim and closer to player
     const score = lateralDist * 3.2 + forwardDist * 0.35;
     if (score < bestScore) {
       bestScore = score;
@@ -2229,7 +2656,6 @@ function updateAimPointer(dt) {
   );
   const dir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
 
-  // Find closest enemy along the bullet firing line to snap the pointer distance
   let targetDist = 36;
   let lockedEnemy = false;
   for (let i = 0; i < enemies.length; i++) {
@@ -2295,7 +2721,6 @@ function updateCameraSmooth(dt) {
   }
 
   if (mode.isFixedSwivel) {
-    // Camera stays fixed at the exact spot it was invoked and rotates with the player's aim yaw
     camPosTarget.copy(state.fixedCamInvokePos);
     const yaw = player.rotation.y;
     const lookDist = 38;
@@ -2310,7 +2735,6 @@ function updateCameraSmooth(dt) {
     camLookTarget.set(targetX + mode.lookOffset.x, mode.lookOffset.y, player.position.z + mode.lookOffset.z);
   }
 
-  // If Enemy Magnification (M / Zoom button) is active, smoothly focus camera onto the priority enemy
   if (state.isMagnified) {
     const focusEnemy = findMagnifyTargetEnemy();
     if (focusEnemy && focusEnemy.mesh) {
@@ -2353,7 +2777,6 @@ function updatePastelDayNight(dt) {
   const isNight = effectiveTimeOfDay >= 0.5;
   document.getElementById('cycle-readout').textContent = `Day ${state.daysSurvived} • ${isNight ? '🌙 Pastel Night' : '☀️ Pastel Day'}`;
 
-  // Phase countdown stopwatch
   const phaseRemaining = isNight ? (1.0 - effectiveTimeOfDay) * 83.3 : (0.5 - effectiveTimeOfDay) * 83.3;
   const cdStr = `${Math.ceil(phaseRemaining)}s`;
   document.getElementById('hud-phase-countdown').textContent = cdStr;
@@ -2388,6 +2811,11 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.1);
 
+  // If the user is actively scrolling inside a setup/pause modal, skip heavy WebGL draws so scrolling is 100% lag-free
+  if (state.isModalScrolling && (!state.gameStarted || state.isPaused || state.isDead)) {
+    return;
+  }
+
   if (!document.getElementById('init-step-2').classList.contains('hidden')) {
     if (previewCanvas.width === 0 || previewCanvas.clientWidth !== Math.round(previewCanvas.width / previewRenderer.getPixelRatio())) {
       resizeAvatarPreview();
@@ -2415,6 +2843,13 @@ function animate() {
     state.enemyGraceTimer -= dt;
   }
 
+  // Animate 3D Aegis Shield aura around player when active
+  if (playerAegisAuraGroup.visible) {
+    aegisOrbitRing.rotation.z += dt * 2.6;
+    const pulse = 1 + Math.sin(performance.now() * 0.006) * 0.05;
+    aegisShellMesh.scale.setScalar(pulse);
+  }
+
   const isNight = updatePastelDayNight(dt);
   clouds.forEach(c => { c.mesh.position.x += dt * c.speed; if (c.mesh.position.x > 65) c.mesh.position.x = -65; });
   bubbles.forEach((b, idx) => { if (b.visible) { b.position.y += dt * (1.8 + (idx % 3) * 0.6); if (b.position.y > 16) b.position.y = 0.5; } });
@@ -2424,9 +2859,8 @@ function animate() {
   const currentCamMode = CAMERA_MODES[state.cameraModeIndex];
 
   if (currentCamMode.isFixedSwivel) {
-    // Fixed Swivel Mode: Camera is fixed where invoked; Left/Right rotates player across a 180-degree arc (±85 deg) to aim & shoot
     const rotSpeed = 1.85;
-    const maxYaw = THREE.MathUtils.degToRad(85); // 170-180 deg total rotational arc
+    const maxYaw = THREE.MathUtils.degToRad(85);
     if (movingLeft) {
       state.aimYaw = Math.min(maxYaw, state.aimYaw + rotSpeed * dt);
       player.rotation.z = THREE.MathUtils.lerp(player.rotation.z, 0.08, 10 * dt);
@@ -2438,7 +2872,6 @@ function animate() {
     }
     player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, state.aimYaw, 14 * dt);
 
-    // Tick down the Swivel Core Reload Timer; if player forgets to reload on time, Core Meltdown kills them
     state.swivelCoreTimer -= dt;
     updateSwivelCoreUI();
     if (state.swivelCoreTimer <= 4.5 && !state.swivelWarned) {
@@ -2447,10 +2880,17 @@ function animate() {
       showToast('⚠️ Swivel Core Critical! Press R or 🔄 Reload Now or You Will Die!');
     }
     if (state.swivelCoreTimer <= 0) {
-      spawnVoxelExplosion(player.position, [0xff758f, 0xfacc15, 0xef4444, 0xffffff], 32, true);
-      triggerYouDied('💥 Swivel Core Overload — Forgot to Reload on Time!');
-      renderer.render(scene, camera);
-      return;
+      // Check if Special Accident-Prevention Shield can save the player from Core Overload accident!
+      if (consumeAegisAccidentShield('Swivel Core Overload')) {
+        state.swivelCoreTimer = state.swivelCoreMax;
+        state.swivelWarned = false;
+        updateSwivelCoreUI();
+      } else {
+        spawnVoxelExplosion(player.position, [0xff758f, 0xfacc15, 0xef4444, 0xffffff], 32, true);
+        triggerYouDied('💥 Swivel Core Overload — Forgot to Reload on Time!');
+        renderer.render(scene, camera);
+        return;
+      }
     }
   } else {
     state.aimYaw = 0;
@@ -2465,9 +2905,28 @@ function animate() {
 
   if (state.keys['ArrowUp'] || state.touchFire) shootBullet();
 
+  const maxEnemiesCap = state.graphicsMode === 'ld' ? 18 : 28;
   state.spawnTimer += dt; const baseInterval = isNight ? 0.62 : 1.42; const effectiveInterval = baseInterval / Math.max(0.45, state.enemySpeedMult * 0.85);
-  if (state.spawnTimer >= effectiveInterval) { state.spawnTimer = 0; if (enemies.length < 28) spawnEnemy(); }
+  if (state.spawnTimer >= effectiveInterval) { state.spawnTimer = 0; if (enemies.length < maxEnemiesCap) spawnEnemy(); }
   state.ammoSpawnTimer += dt; if (state.ammoSpawnTimer >= 5.2) { state.ammoSpawnTimer = 0; if (pickups.filter(p => p.kind === 'ammo').length < 3) spawnAmmoPack(); }
+
+  // Spawn Credit Orbs / Diamonds (💎) periodically on the lane
+  state.diamondSpawnTimer += dt;
+  if (state.diamondSpawnTimer >= 8.5) {
+    state.diamondSpawnTimer = 0;
+    if (pickups.filter(p => p.kind === 'diamond').length < 2) {
+      spawnDiamondOrb();
+    }
+  }
+
+  // Spawn Special Accident-Prevention Shield Drops (🛡️) periodically on the lane
+  state.shieldSpawnTimer += dt;
+  if (state.shieldSpawnTimer >= 16.0) {
+    state.shieldSpawnTimer = 0;
+    if (pickups.filter(p => p.kind === 'shield').length < 1 && state.aegisShields < 3) {
+      spawnSpecialShieldDrop();
+    }
+  }
 
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const b = projectiles[i];
@@ -2495,9 +2954,18 @@ function animate() {
       const b = projectiles[j];
       if (Math.abs(b.position.z - en.mesh.position.z) < 1.9 && Math.abs(b.position.x - en.mesh.position.x) < 1.65) {
         const preset = ENEMY_DRESS_PRESETS[state.enemyDressIndex];
+        const enemyDeathX = en.mesh.position.x;
         spawnVoxelExplosion(en.mesh.position, [preset.primary, preset.secondary, preset.accent, 0xffffff], 26, true);
         sfx.playExplosion(); scene.remove(b); projectiles.splice(j, 1); scene.remove(en.mesh); enemies.splice(i, 1);
-        if (state.gameStarted && !state.isDead) { state.enemiesKilled++; recalcScore(); updateHUD(); }
+        if (state.gameStarted && !state.isDead) {
+          state.enemiesKilled++;
+          // Defeated enemies have a 24% chance to drop a bonus Credit Diamond Orb on your lane
+          if (Math.random() < 0.24 && pickups.filter(p => p.kind === 'diamond').length < 3) {
+            spawnDiamondOrb(enemyDeathX);
+          }
+          recalcScore();
+          updateHUD();
+        }
         hitByBullet = true; break;
       }
     }
@@ -2523,7 +2991,6 @@ function animate() {
     let collected = false;
 
     if (currentCamMode.isFixedSwivel) {
-      // In Fixed Swivel mode, player can also shoot floating fruits/ammo capsules in front of them to trigger reload + heal
       for (let j = projectiles.length - 1; j >= 0; j--) {
         const b = projectiles[j];
         if (Math.abs(b.position.z - p.mesh.position.z) < 1.75 && Math.abs(b.position.x - p.mesh.position.x) < 1.75) {
@@ -2546,6 +3013,29 @@ function animate() {
           updateSwivelCoreUI();
         }
         spawnPastelBurst(p.mesh.position, [0xff758f, 0xffafcc, 0x95d5b2, 0xffd6a5], 16); showToast('🍑 Ate Pastel Peach! +0.5 ♥ & +100 Score');
+      } else if (p.kind === 'diamond') {
+        state.diamondsRun++;
+        state.diamondsBank++;
+        persistVaultCurrencies();
+        sfx.playDiamond();
+        if (currentCamMode.isFixedSwivel) {
+          state.swivelCoreTimer = state.swivelCoreMax;
+          state.swivelWarned = false;
+          updateSwivelCoreUI();
+        }
+        spawnPastelBurst(p.mesh.position, [0x38bdf8, 0x7dd3fc, 0xe0f2fe, 0xffffff], 16);
+        showToast(`💎 Credit Diamond Stored! Vault: ${state.diamondsBank} 💎 (+150 Score)`);
+      } else if (p.kind === 'shield') {
+        state.aegisShields = Math.min(5, state.aegisShields + 1);
+        persistVaultCurrencies();
+        sfx.playShieldDrop();
+        if (currentCamMode.isFixedSwivel) {
+          state.swivelCoreTimer = state.swivelCoreMax;
+          state.swivelWarned = false;
+          updateSwivelCoreUI();
+        }
+        spawnPastelBurst(p.mesh.position, [0x10b981, 0x6ee7b7, 0xfef08a, 0xffffff], 18);
+        showToast(`🛡️ Special Aegis Shield Equipped (${state.aegisShields} Active)! Blocks Next Accident!`);
       } else {
         state.ammo += 20; sfx.playReload();
         if (currentCamMode.isFixedSwivel) {
@@ -2581,6 +3071,46 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// =========================================================================
+// 15. PROPORTIONAL SCREEN SCALING & STRICT NON-OVERLAPPING UI ENGINE
+// =========================================================================
+function syncNonOverlappingUiScale() {
+  const root = document.documentElement;
+  const topStack = document.getElementById('hud-top-stack');
+  const bottomStack = document.getElementById('hud-bottom-stack');
+  if (!topStack || !bottomStack) return;
+
+  // Reset scale to 1 first to measure natural heights accurately
+  root.style.setProperty('--ui-dynamic-scale', '1');
+
+  const viewport = window.visualViewport;
+  const vh = Math.max(1, Math.round(viewport ? viewport.height : window.innerHeight));
+  const vw = Math.max(1, Math.round(viewport ? viewport.width : window.innerWidth));
+
+  // Base proportional scale according to screen size (larger screen = larger UI, smaller screen = smaller UI)
+  let targetScale = 1.0;
+  if (vw >= 2200 && vh >= 1150) {
+    targetScale = 1.18;
+  } else if (vw >= 1650 && vh >= 920) {
+    targetScale = 1.08;
+  } else if (vw < 360 || vh < 560) {
+    targetScale = 0.88;
+  }
+
+  // Measure actual rendered heights to strictly prevent any vertical overlap between top HUD and bottom controls
+  const topH = topStack.offsetHeight || 0;
+  const botH = bottomStack.offsetHeight || 0;
+  const minPlayfieldClearance = Math.max(76, vh * 0.16);
+  const availableForUi = Math.max(180, vh - minPlayfieldClearance - 20);
+  const combinedUiHeight = (topH + botH) * targetScale;
+
+  if (combinedUiHeight > availableForUi && (topH + botH) > 0) {
+    targetScale = Math.max(0.68, Math.min(targetScale, availableForUi / (topH + botH)));
+  }
+
+  root.style.setProperty('--ui-dynamic-scale', targetScale.toFixed(3));
+}
+
 let viewportSyncFrame = 0;
 let lastViewportWidth = 0;
 let lastViewportHeight = 0;
@@ -2599,10 +3129,10 @@ function syncViewportDimensions() {
       lastViewportHeight = vh;
       camera.aspect = vw / vh;
       camera.updateProjectionMatrix();
-      // Keep both the WebGL drawing buffer and the canvas CSS box in sync with mobile browser chrome.
       renderer.setSize(vw, vh, true);
     }
     resizeAvatarPreview();
+    syncNonOverlappingUiScale();
   });
 }
 
@@ -2613,12 +3143,16 @@ if (window.visualViewport) {
 }
 
 window.onload = function () {
+  applyGraphicsDefinitionMode(state.graphicsMode, false);
   syncViewportDimensions();
   buildPlayerModel();
   setupCharacterCustomization();
   updateAvatarPreviewModel();
   rebuildBiomeScenery('Grass');
-  spawnAmmoPack(); recalcScore(); updateHUD();
+  spawnAmmoPack();
+  spawnDiamondOrb();
+  recalcScore();
+  updateHUD();
+  syncNonOverlappingUiScale();
   animate();
 };
-
