@@ -405,9 +405,14 @@ const ENEMY_DRESS_PRESETS = [
   { name: 'Imperial Violet & Coral', primary: 0x7c3aed, secondary: 0x2e1065, accent: 0xfb7185 }
 ];
 
-// Auto-detect low-memory (<= 2GB RAM) hardware as initial default if no preference was saved
+// Auto-detect low-memory (<= 2GB RAM) hardware and touch screens
 const detectedLowRam = (typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory <= 2);
 const savedGfxPref = localStorage.getItem('novashot_gfx_mode') || (detectedLowRam ? 'ld' : 'hd');
+const isTouchCapableDevice = (typeof window !== 'undefined') && (
+  ('ontouchstart' in window) ||
+  (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
+  (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+);
 
 const state = {
   gameStarted: false,
@@ -417,7 +422,7 @@ const state = {
   isModalScrolling: false,
   countdownValue: 0,
   enemyGraceTimer: 0,
-  deviceMode: 'desktop',
+  deviceMode: isTouchCapableDevice ? 'touch' : 'desktop',
   graphicsMode: savedGfxPref === 'ld' ? 'ld' : 'hd', // 'hd' (High Def) | 'ld' (Low Def 2GB RAM Smooth)
   uiTheme: 'light', // 'light' | 'dark'
   cameraModeIndex: 0,
@@ -479,7 +484,7 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance'
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio || 1, 2));
 renderer.shadowMap.enabled = state.graphicsMode === 'hd';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1274,8 +1279,11 @@ function rgbToHex(rgbStr) {
 // 360° Preview Room Setup
 const previewContainer = document.getElementById('avatar-preview-container');
 const previewCanvas = document.getElementById('avatar-preview-canvas');
+if (previewContainer) previewContainer.style.touchAction = 'none';
+if (previewCanvas) previewCanvas.style.touchAction = 'none';
+
 const previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, antialias: state.graphicsMode === 'hd', alpha: true });
-previewRenderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio, 2));
+previewRenderer.setPixelRatio(state.graphicsMode === 'ld' ? 1.0 : Math.min(window.devicePixelRatio || 1, 2));
 previewRenderer.shadowMap.enabled = state.graphicsMode === 'hd';
 previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
 previewRenderer.toneMappingExposure = 0.92;
@@ -1350,6 +1358,26 @@ window.addEventListener('pointermove', (e) => {
 });
 window.addEventListener('pointerup', () => { isDraggingAvatar = false; });
 
+// Explicit Touch Listeners for 360° Studio Preview so mobile LD/HD touch rotation works seamlessly
+previewContainer.addEventListener('touchstart', (e) => {
+  if (e.target.closest('#avatar-autospin-btn')) return;
+  if (e.touches.length > 0) {
+    isDraggingAvatar = true;
+    prevMouseX = e.touches[0].clientX;
+    autoSpinAvatar = false;
+    document.getElementById('avatar-autospin-btn').textContent = '🔄 Auto-Spin: OFF';
+  }
+}, { passive: true });
+previewContainer.addEventListener('touchmove', (e) => {
+  if (!isDraggingAvatar || e.touches.length === 0) return;
+  const deltaX = e.touches[0].clientX - prevMouseX;
+  prevMouseX = e.touches[0].clientX;
+  avatarRotationY += deltaX * 0.015;
+  previewRangerGroup.rotation.y = avatarRotationY;
+  previewPedestalGroup.rotation.y = avatarRotationY;
+}, { passive: true });
+window.addEventListener('touchend', () => { isDraggingAvatar = false; }, { passive: true });
+
 document.getElementById('avatar-autospin-btn').addEventListener('click', () => {
   autoSpinAvatar = !autoSpinAvatar;
   document.getElementById('avatar-autospin-btn').textContent = `🔄 Auto-Spin: ${autoSpinAvatar ? 'ON' : 'OFF'}`;
@@ -1405,134 +1433,181 @@ function spawnEnemy() {
   enemies.push({ mesh, type: currentType, baseSpeed: 10.5 + Math.random() * 4.5, seed: Math.random() * 10 });
 }
 
-function spawnFruit() {
-  const fruitGroup = new THREE.Group();
-  const berry = new THREE.Mesh(new THREE.SphereGeometry(0.65, 24, 24), new THREE.MeshStandardMaterial({ color: 0xff758f, roughness: 0.25 })); berry.position.y = 0.95; berry.castShadow = state.graphicsMode === 'hd';
-  const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 12), new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })); leaf.position.set(0.12, 1.65, 0); leaf.rotation.z = -0.4;
-  const aura = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 12, 32), new THREE.MeshBasicMaterial({ color: 0xffd6a5 })); aura.rotation.x = Math.PI / 2; aura.position.y = 0.2;
-  fruitGroup.add(berry, leaf, aura);
-
+// Helper to place pickups side-by-side on the lane without overlapping each other or the player
+function getNonOverlappingPickupPosition(preferredX = null) {
   const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
   if (isSwivel) {
     const angleSpread = (Math.random() - 0.5) * 1.15;
     const dist = 7.5 + Math.random() * 5.5;
-    const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
+    const rawX = preferredX !== null ? preferredX : (player.position.x - Math.sin(angleSpread) * dist);
+    const spawnX = THREE.MathUtils.clamp(rawX, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
     const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
-    fruitGroup.position.set(spawnX, 0.35, spawnZ);
-  } else {
-    let spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
-    if (Math.abs(spawnX - player.position.x) < 3.5) spawnX = -spawnX;
-    fruitGroup.position.set(spawnX, 0, PLAYER_Z);
+    return new THREE.Vector3(spawnX, 0.35, spawnZ);
   }
-  scene.add(fruitGroup); pickups.push({ mesh: fruitGroup, kind: 'fruit' });
+
+  let candidateX = preferredX !== null ? preferredX : (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
+  candidateX = THREE.MathUtils.clamp(candidateX, -BOUNDARY_X + 1.8, BOUNDARY_X - 1.8);
+
+  // Keep a clear gap from the player and from other active pickups on the lane
+  for (let attempt = 0; attempt < 14; attempt++) {
+    const tooCloseToPlayer = Math.abs(candidateX - player.position.x) < 2.8;
+    const tooCloseToPickup = pickups.some(p => p.mesh && Math.abs(p.mesh.position.x - candidateX) < 2.4);
+    if (!tooCloseToPlayer && !tooCloseToPickup) break;
+    candidateX = (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
+  }
+  return new THREE.Vector3(THREE.MathUtils.clamp(candidateX, -BOUNDARY_X + 1.8, BOUNDARY_X - 1.8), 0, PLAYER_Z);
 }
 
-function spawnAmmoPack() {
+// Spawn Healing Fruit / Apple + automatically spawn Diamond & Special Shield alongside it
+function spawnFruit(spawnAlongsideItems = true) {
+  const fruitGroup = new THREE.Group();
+  const berry = new THREE.Mesh(
+    new THREE.SphereGeometry(0.65, 24, 24),
+    new THREE.MeshStandardMaterial({ color: 0xff758f, roughness: 0.25 })
+  );
+  berry.position.y = 0.95;
+  berry.castShadow = state.graphicsMode === 'hd';
+
+  const leaf = new THREE.Mesh(
+    new THREE.ConeGeometry(0.28, 0.5, 12),
+    new THREE.MeshStandardMaterial({ color: 0x95d5b2, roughness: 0.4 })
+  );
+  leaf.position.set(0.12, 1.65, 0);
+  leaf.rotation.z = -0.4;
+
+  const aura = new THREE.Mesh(
+    new THREE.TorusGeometry(0.85, 0.06, 12, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffd6a5 })
+  );
+  aura.rotation.x = Math.PI / 2;
+  aura.position.y = 0.2;
+
+  fruitGroup.add(berry, leaf, aura);
+
+  const pos = getNonOverlappingPickupPosition();
+  fruitGroup.position.copy(pos);
+  scene.add(fruitGroup);
+  pickups.push({ mesh: fruitGroup, kind: 'fruit' });
+
+  // Spawn Credit Diamond & Special Aegis Shield directly alongside the Fruit/Apple
+  if (spawnAlongsideItems) {
+    if (pickups.filter(p => p.kind === 'diamond').length < 3) {
+      spawnDiamondOrb(pos.x + 3.2);
+    }
+    if (pickups.filter(p => p.kind === 'shield').length < 2) {
+      spawnSpecialShieldDrop(pos.x - 3.2);
+    }
+  }
+}
+
+// Spawn Blaster Ammo Capsule + companion Diamond/Shield alongside it when lane has room
+function spawnAmmoPack(spawnAlongsideItems = false) {
   const ammoGroup = new THREE.Group();
-  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.1, 20), new THREE.MeshStandardMaterial({ color: 0xfdffb6, roughness: 0.2, metalness: 0.3 })); core.position.y = 0.95;
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.07, 12, 28), new THREE.MeshBasicMaterial({ color: 0x9bf6ff })); ring.position.y = 0.95;
+  const core = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 1.1, 20),
+    new THREE.MeshStandardMaterial({ color: 0xfdffb6, roughness: 0.2, metalness: 0.3 })
+  );
+  core.position.y = 0.95;
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.65, 0.07, 12, 28),
+    new THREE.MeshBasicMaterial({ color: 0x9bf6ff })
+  );
+  ring.position.y = 0.95;
   ammoGroup.add(core, ring);
 
-  const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
-  if (isSwivel) {
-    const angleSpread = (Math.random() - 0.5) * 1.2;
-    const dist = 8.0 + Math.random() * 6.0;
-    const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
-    const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
-    ammoGroup.position.set(spawnX, 0.35, spawnZ);
-  } else {
-    const spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
-    ammoGroup.position.set(spawnX, 0, PLAYER_Z);
+  const pos = getNonOverlappingPickupPosition();
+  ammoGroup.position.copy(pos);
+  scene.add(ammoGroup);
+  pickups.push({ mesh: ammoGroup, kind: 'ammo' });
+
+  if (spawnAlongsideItems) {
+    if (pickups.filter(p => p.kind === 'diamond').length < 3) {
+      spawnDiamondOrb(pos.x + 3.0);
+    }
+    if (pickups.filter(p => p.kind === 'shield').length < 2) {
+      spawnSpecialShieldDrop(pos.x - 3.0);
+    }
   }
-  scene.add(ammoGroup); pickups.push({ mesh: ammoGroup, kind: 'ammo' });
 }
 
 // Spawn Credit Orbs / Diamonds (💎) — Stored persistently across games & used to Revive on death
-function spawnDiamondOrb(customX = null) {
+function spawnDiamondOrb(preferredX = null) {
   const diamondGroup = new THREE.Group();
   const crystalMat = new THREE.MeshStandardMaterial({
     color: 0x38bdf8,
     emissive: 0x0284c7,
-    emissiveIntensity: 0.45,
+    emissiveIntensity: 0.55,
     roughness: 0.12,
     metalness: 0.65
   });
-  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.68, 0), crystalMat);
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.72, 0), crystalMat);
   gem.position.y = 1.05;
-  gem.scale.set(0.9, 1.25, 0.9);
+  gem.scale.set(0.95, 1.3, 0.95);
+
   const innerOrb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.32, 12, 12),
+    new THREE.SphereGeometry(0.34, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xe0f2fe })
   );
   innerOrb.position.y = 1.05;
+
   const haloRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.82, 0.06, 10, 28),
+    new THREE.TorusGeometry(0.86, 0.065, 10, 28),
     new THREE.MeshBasicMaterial({ color: 0x7dd3fc })
   );
   haloRing.rotation.x = Math.PI / 2;
-  haloRing.position.y = 0.25;
+  haloRing.position.y = 0.22;
+
   diamondGroup.add(gem, innerOrb, haloRing);
 
-  const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
-  if (isSwivel) {
-    const angleSpread = (Math.random() - 0.5) * 1.15;
-    const dist = 7.8 + Math.random() * 5.8;
-    const spawnX = customX !== null
-      ? THREE.MathUtils.clamp(customX, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5)
-      : THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
-    const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
-    diamondGroup.position.set(spawnX, 0.35, spawnZ);
-  } else {
-    const spawnX = customX !== null
-      ? THREE.MathUtils.clamp(customX, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5)
-      : (Math.random() - 0.5) * (BOUNDARY_X * 1.65);
-    diamondGroup.position.set(spawnX, 0, PLAYER_Z);
-  }
+  const pos = getNonOverlappingPickupPosition(preferredX);
+  diamondGroup.position.copy(pos);
   scene.add(diamondGroup);
   pickups.push({ mesh: diamondGroup, kind: 'diamond' });
 }
 
 // Spawn Special Accident-Prevention Aegis Shield Drop (🛡️)
-function spawnSpecialShieldDrop() {
+function spawnSpecialShieldDrop(preferredX = null) {
   const shieldGroup = new THREE.Group();
   const coreShield = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.62, 1),
+    new THREE.IcosahedronGeometry(0.66, 1),
     new THREE.MeshStandardMaterial({
       color: 0x10b981,
       emissive: 0x059669,
-      emissiveIntensity: 0.45,
+      emissiveIntensity: 0.5,
       roughness: 0.18,
       metalness: 0.5
     })
   );
   coreShield.position.y = 1.05;
+
   const outerRing1 = new THREE.Mesh(
-    new THREE.TorusGeometry(0.86, 0.07, 12, 28),
+    new THREE.TorusGeometry(0.9, 0.075, 12, 28),
     new THREE.MeshBasicMaterial({ color: 0x6ee7b7 })
   );
   outerRing1.position.y = 1.05;
+
   const outerRing2 = new THREE.Mesh(
-    new THREE.TorusGeometry(0.86, 0.05, 12, 28),
+    new THREE.TorusGeometry(0.9, 0.055, 12, 28),
     new THREE.MeshBasicMaterial({ color: 0xfef08a })
   );
   outerRing2.rotation.x = Math.PI / 2;
   outerRing2.position.y = 0.22;
+
   shieldGroup.add(coreShield, outerRing1, outerRing2);
 
-  const isSwivel = CAMERA_MODES[state.cameraModeIndex] && CAMERA_MODES[state.cameraModeIndex].isFixedSwivel;
-  if (isSwivel) {
-    const angleSpread = (Math.random() - 0.5) * 1.1;
-    const dist = 8.0 + Math.random() * 5.2;
-    const spawnX = THREE.MathUtils.clamp(player.position.x - Math.sin(angleSpread) * dist, -BOUNDARY_X + 1.5, BOUNDARY_X - 1.5);
-    const spawnZ = PLAYER_Z - Math.cos(angleSpread) * dist;
-    shieldGroup.position.set(spawnX, 0.35, spawnZ);
-  } else {
-    let spawnX = (Math.random() - 0.5) * (BOUNDARY_X * 1.6);
-    if (Math.abs(spawnX - player.position.x) < 3.0) spawnX = -spawnX;
-    shieldGroup.position.set(spawnX, 0, PLAYER_Z);
-  }
+  const pos = getNonOverlappingPickupPosition(preferredX);
+  shieldGroup.position.copy(pos);
   scene.add(shieldGroup);
   pickups.push({ mesh: shieldGroup, kind: 'shield' });
+}
+
+// Spawn all 4 collectibles (Fruit/Apple, Ammo, Diamond Orb, and Special Shield) side-by-side on the lane
+function spawnAllPickupsAlongside() {
+  if (pickups.filter(p => p.kind === 'fruit').length < 2) spawnFruit(false);
+  if (pickups.filter(p => p.kind === 'ammo').length < 2) spawnAmmoPack(false);
+  if (pickups.filter(p => p.kind === 'diamond').length < 2) spawnDiamondOrb();
+  if (pickups.filter(p => p.kind === 'shield').length < 2) spawnSpecialShieldDrop();
 }
 
 function persistVaultCurrencies() {
@@ -1619,7 +1694,6 @@ function triggerUpperLeftToLowerRightTransition(targetTheme) {
   const curtain = document.getElementById('smooth-theme-curtain');
   if (curtain) {
     curtain.classList.remove('sweep-to-dark', 'sweep-to-light');
-    // Force clean GPU layer restyle without layout thrashing
     void curtain.offsetWidth;
     curtain.classList.add(targetTheme === 'dark' ? 'sweep-to-dark' : 'sweep-to-light');
     clearTimeout(themeCurtainTimer);
@@ -1662,7 +1736,7 @@ function applyGraphicsDefinitionMode(mode, announce = true) {
   dirLight.castShadow = target === 'hd';
   previewRenderer.setPixelRatio(dpr);
 
-  // Sync Initiation Screen & HUD & Pause UI Indicators
+  // Sync Initiation Screen & HUD & Pause UI Indicators (without touching device selection!)
   const hdBtn = document.getElementById('select-hd-btn');
   const ldBtn = document.getElementById('select-ld-btn');
   const badge = document.getElementById('gfx-selected-badge');
@@ -1690,6 +1764,14 @@ function applyGraphicsDefinitionMode(mode, announce = true) {
   document.querySelectorAll('.pause-gfx-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.gfx === target);
   });
+
+  // Preserve active device mode UI highlights
+  const touchBtn = document.getElementById('select-touch-btn');
+  const deskBtn = document.getElementById('select-desktop-btn');
+  if (touchBtn && deskBtn) {
+    touchBtn.classList.toggle('selected-device', state.deviceMode === 'touch');
+    deskBtn.classList.toggle('selected-device', state.deviceMode === 'desktop');
+  }
 
   rebuildBiomeScenery(BIOMES[state.biomeIndex]);
   syncViewportDimensions();
@@ -1980,6 +2062,9 @@ function triggerSwivelReload() {
   if (absorbedShields > 0) sfx.playShieldDrop();
   spawnPastelBurst(player.position, [0x34d399, 0x38bdf8, 0xfdffb6, 0xff758f], 18);
 
+  // Immediately respawn fresh pickups alongside each other
+  spawnAllPickupsAlongside();
+
   updateSwivelCoreUI();
   recalcScore();
   updateHUD();
@@ -2037,6 +2122,8 @@ function consumeAegisAccidentShield(accidentReason) {
     persistVaultCurrencies();
     sfx.playShieldBlock();
     spawnVoxelExplosion(player.position, [0x10b981, 0x6ee7b7, 0xfef08a, 0xffffff], 22, true);
+    // Spawn a replacement shield & fruit alongside each other on the lane
+    spawnFruit(true);
     updateHUD();
     showToast(`🛡️ Aegis Shield Prevented Accident (${accidentReason})! ${state.aegisShields} Shield Left`);
     return true;
@@ -2050,11 +2137,15 @@ function takeDamage(reason) {
   if (consumeAegisAccidentShield(reason)) {
     return;
   }
-  state.health -= 1; spawnFruit(); spawnVoxelExplosion(player.position, [0xff758f, 0xffafcc, 0xbdb2ff, 0xffd6a5], 18, true);
+  state.health -= 1;
+  // Spawn Healing Fruit along with Diamond & Special Shield alongside it!
+  spawnFruit(true);
+  spawnVoxelExplosion(player.position, [0xff758f, 0xffafcc, 0xbdb2ff, 0xffd6a5], 18, true);
   if (state.health <= 0) {
     triggerYouDied();
   } else {
-    sfx.playDamage(); showToast(`${reason}! −0.5 ♥ • 🍑 Healing Fruit Spawned!`);
+    sfx.playDamage();
+    showToast(`${reason}! −0.5 ♥ • 🍑 Fruit + 💎 Diamond + 🛡️ Shield Spawned!`);
   }
   recalcScore(); updateHUD();
 }
@@ -2117,6 +2208,7 @@ function reviveWithDiamonds() {
   state.enemyGraceTimer = 2.5;
   sfx.playRevive();
   spawnVoxelExplosion(player.position, [0x38bdf8, 0x10b981, 0xfef08a, 0xffffff], 26, true);
+  spawnAllPickupsAlongside();
   recalcScore();
   updateHUD();
   startCircularCountdown(() => {
@@ -2134,6 +2226,7 @@ function respawnGame() {
   updateSwivelCoreUI();
   for (let i = enemies.length - 1; i >= 0; i--) { scene.remove(enemies[i].mesh); enemies.splice(i, 1); }
   state.enemyGraceTimer = 1.0;
+  spawnAllPickupsAlongside();
   startCircularCountdown(() => { sfx.playUI(1.3); showToast('⚡ Respawned & Grace Shield Active (1s)!'); }, 3);
   recalcScore(); updateHUD();
 }
@@ -2297,23 +2390,55 @@ function startCircularCountdown(onComplete, seconds = 3) {
 }
 
 // =========================================================================
-// 12. INITIALIZATION, INITIATION STEPS & CONTROLS BINDING
+// 12. INITIALIZATION, INITIATION STEPS & TOUCH / DESKTOP CONTROLS BINDING
 // =========================================================================
 const deviceModal = document.getElementById('device-modal');
 const touchControlsLayer = document.getElementById('touch-controls-layer');
 const desktopControlsLayer = document.getElementById('desktop-controls-layer');
 
-function setDeviceMode(mode) {
-  sfx.init(); sfx.playUI(1.2); state.deviceMode = mode;
-  document.querySelectorAll('#init-step-1 > div:first-child .device-card-btn').forEach(btn => btn.classList.remove('selected-device'));
-  if (mode === 'touch') document.getElementById('select-touch-btn').classList.add('selected-device');
-  else document.getElementById('select-desktop-btn').classList.add('selected-device');
-  showToast(mode === 'touch' ? '📱 Touch Mode Selected' : '💻 Desktop Mode Selected');
+function syncActiveControlDockLayer() {
+  if (state.deviceMode === 'touch') {
+    touchControlsLayer.classList.remove('hidden');
+    touchControlsLayer.classList.add('flex');
+    desktopControlsLayer.classList.remove('flex');
+    desktopControlsLayer.classList.add('hidden');
+  } else {
+    desktopControlsLayer.classList.remove('hidden');
+    desktopControlsLayer.classList.add('flex');
+    touchControlsLayer.classList.remove('flex');
+    touchControlsLayer.classList.add('hidden');
+  }
+  syncNonOverlappingUiScale();
+}
+
+function setDeviceMode(mode, announce = true) {
+  sfx.init();
+  state.deviceMode = mode === 'touch' ? 'touch' : 'desktop';
+  const touchBtn = document.getElementById('select-touch-btn');
+  const deskBtn = document.getElementById('select-desktop-btn');
+  if (touchBtn && deskBtn) {
+    touchBtn.classList.toggle('selected-device', state.deviceMode === 'touch');
+    deskBtn.classList.toggle('selected-device', state.deviceMode === 'desktop');
+  }
+  if (state.gameStarted) {
+    syncActiveControlDockLayer();
+  }
+  if (announce) {
+    sfx.playUI(1.2);
+    showToast(state.deviceMode === 'touch' ? '📱 Touch Mode Selected' : '💻 Desktop Mode Selected');
+  }
 }
 
 // Step 1 -> Step 2 Navigation
-document.getElementById('select-touch-btn').addEventListener('click', () => setDeviceMode('touch'));
-document.getElementById('select-desktop-btn').addEventListener('click', () => setDeviceMode('desktop'));
+document.getElementById('select-touch-btn').addEventListener('click', () => setDeviceMode('touch', true));
+document.getElementById('select-desktop-btn').addEventListener('click', () => setDeviceMode('desktop', true));
+
+// If user interacts with the screen via touch on Step 1, automatically ensure Touch Controls are ready
+window.addEventListener('touchstart', () => {
+  if (!state.gameStarted && state.deviceMode !== 'touch') {
+    setDeviceMode('touch', false);
+  }
+}, { once: true, passive: true });
 
 // 1st Screen High / Low Definition Mode Selection Bindings
 document.getElementById('select-hd-btn').addEventListener('click', () => applyGraphicsDefinitionMode('hd', true));
@@ -2359,20 +2484,18 @@ document.getElementById('step-2-back-btn').addEventListener('click', () => {
 document.getElementById('initiate-game-btn').addEventListener('click', () => {
   sfx.init(); sfx.playUI(1.3);
   state.gameStarted = true;
+  state.isModalScrolling = false;
+  document.body.classList.remove('is-scrolling-modal');
   state.enemyGraceTimer = 1.0;
   deviceModal.classList.add('hidden-modal');
 
-  if (state.deviceMode === 'touch') {
-    touchControlsLayer.classList.replace('hidden', 'flex');
-    desktopControlsLayer.classList.replace('flex', 'hidden');
-    showToast('📱 Touch Controls & Web Audio Active!');
-  } else {
-    desktopControlsLayer.classList.replace('hidden', 'flex');
-    touchControlsLayer.classList.replace('flex', 'hidden');
-    showToast('💻 Keyboard Controls & Web Audio Active!');
-  }
+  syncActiveControlDockLayer();
+  showToast(state.deviceMode === 'touch'
+    ? '📱 Touch Controls & Web Audio Active!'
+    : '💻 Keyboard Controls & Web Audio Active!');
 
   buildPlayerModel();
+  spawnAllPickupsAlongside();
   syncNonOverlappingUiScale();
   startCircularCountdown(() => { sfx.playUI(1.4); showToast('🚀 Novashot Started! 1s Grace Shield Active!'); }, 3);
 });
@@ -2559,15 +2682,100 @@ document.getElementById('desk-p-btn').addEventListener('click', () => togglePaus
 document.getElementById('touch-magnify-btn').addEventListener('click', () => toggleMagnifyEnemy());
 document.getElementById('touch-reload-btn').addEventListener('click', () => triggerSwivelReload());
 
+// Bulletproof Multi-Touch + Pointer Hold Binding (Works in both LD & HD Modes on all mobile devices)
 function bindHoldButton(btnId, onStateChange, onImmediatePress) {
   const btn = document.getElementById(btnId);
-  const start = (e) => { e.preventDefault(); btn.classList.add('pressed'); onStateChange(true); if (onImmediatePress) onImmediatePress(); };
-  const end = (e) => { e.preventDefault(); btn.classList.remove('pressed'); onStateChange(false); };
-  btn.addEventListener('pointerdown', start); btn.addEventListener('pointerup', end); btn.addEventListener('pointerleave', end); btn.addEventListener('pointercancel', end);
+  if (!btn) return;
+  btn.style.touchAction = 'none';
+
+  const start = (e) => {
+    if (e.cancelable) e.preventDefault();
+    sfx.init();
+    btn.classList.add('pressed');
+    onStateChange(true);
+    if (onImmediatePress) onImmediatePress();
+  };
+
+  const end = (e) => {
+    if (e && e.cancelable) e.preventDefault();
+    btn.classList.remove('pressed');
+    onStateChange(false);
+  };
+
+  // Explicit Touch Events for 100% compatibility on low-RAM Android/iOS browsers
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('touchend', end, { passive: false });
+  btn.addEventListener('touchcancel', end, { passive: false });
+
+  // Pointer Events for desktop/hybrid touch devices
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') return; // Handled by touchstart
+    start(e);
+  });
+  btn.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch') return;
+    end(e);
+  });
+  btn.addEventListener('pointerleave', (e) => {
+    if (e.pointerType === 'touch') return;
+    end(e);
+  });
+  btn.addEventListener('pointercancel', (e) => {
+    if (e.pointerType === 'touch') return;
+    end(e);
+  });
 }
+
 bindHoldButton('touch-left-btn', (val) => { state.touchLeft = val; });
 bindHoldButton('touch-right-btn', (val) => { state.touchRight = val; });
 bindHoldButton('touch-fire-btn', (val) => { state.touchFire = val; }, () => shootBullet());
+
+// Direct Playfield Canvas Touch Support (Works in both LD & HD Mode!)
+// If a player touches/drags on the 3D canvas directly on mobile, auto-reveal the touch pad and steer/shoot
+let canvasTouchActive = false;
+let canvasTouchStartX = 0;
+
+canvas.addEventListener('touchstart', (e) => {
+  if (!state.gameStarted || state.isPaused || state.isDead || state.isCountingDown) return;
+  if (state.deviceMode !== 'touch') {
+    setDeviceMode('touch', false);
+  }
+  if (e.touches.length > 0) {
+    canvasTouchActive = true;
+    canvasTouchStartX = e.touches[0].clientX;
+    const screenThird = window.innerWidth / 3;
+    if (canvasTouchStartX < screenThird) {
+      state.touchLeft = true;
+      state.touchRight = false;
+    } else if (canvasTouchStartX > screenThird * 2) {
+      state.touchRight = true;
+      state.touchLeft = false;
+    } else {
+      state.touchFire = true;
+      shootBullet();
+    }
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (!canvasTouchActive || !state.gameStarted || e.touches.length === 0) return;
+  const curX = e.touches[0].clientX;
+  const deltaX = curX - canvasTouchStartX;
+  if (Math.abs(deltaX) > 14) {
+    state.touchLeft = deltaX < 0;
+    state.touchRight = deltaX > 0;
+  }
+}, { passive: true });
+
+const endCanvasTouch = () => {
+  if (!canvasTouchActive) return;
+  canvasTouchActive = false;
+  state.touchLeft = false;
+  state.touchRight = false;
+  state.touchFire = false;
+};
+canvas.addEventListener('touchend', endCanvasTouch, { passive: true });
+canvas.addEventListener('touchcancel', endCanvasTouch, { passive: true });
 
 window.addEventListener('keydown', (e) => {
   state.keys[e.code] = true;
@@ -2591,7 +2799,7 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => { state.keys[e.code] = false; });
 
-// Scroll Lag Elimination: Pause heavy 3D background draws while user actively scrolls modal cards
+// Scroll Lag Elimination: Pause heavy decorative blurs while actively scrolling modal cards
 let modalScrollTimeout = null;
 document.querySelectorAll('.modal-fit-card, .modal-backdrop').forEach(scroller => {
   scroller.addEventListener('scroll', () => {
@@ -2603,7 +2811,7 @@ document.querySelectorAll('.modal-fit-card, .modal-backdrop').forEach(scroller =
     modalScrollTimeout = setTimeout(() => {
       state.isModalScrolling = false;
       document.body.classList.remove('is-scrolling-modal');
-    }, 120);
+    }, 90);
   }, { passive: true });
 });
 
@@ -2906,24 +3114,40 @@ function animate() {
   if (state.keys['ArrowUp'] || state.touchFire) shootBullet();
 
   const maxEnemiesCap = state.graphicsMode === 'ld' ? 18 : 28;
-  state.spawnTimer += dt; const baseInterval = isNight ? 0.62 : 1.42; const effectiveInterval = baseInterval / Math.max(0.45, state.enemySpeedMult * 0.85);
-  if (state.spawnTimer >= effectiveInterval) { state.spawnTimer = 0; if (enemies.length < maxEnemiesCap) spawnEnemy(); }
-  state.ammoSpawnTimer += dt; if (state.ammoSpawnTimer >= 5.2) { state.ammoSpawnTimer = 0; if (pickups.filter(p => p.kind === 'ammo').length < 3) spawnAmmoPack(); }
+  state.spawnTimer += dt;
+  const baseInterval = isNight ? 0.62 : 1.42;
+  const effectiveInterval = baseInterval / Math.max(0.45, state.enemySpeedMult * 0.85);
+  if (state.spawnTimer >= effectiveInterval) {
+    state.spawnTimer = 0;
+    if (enemies.length < maxEnemiesCap) spawnEnemy();
+  }
 
-  // Spawn Credit Orbs / Diamonds (💎) periodically on the lane
+  // 1) Spawn Ammo + Fruit/Apple + companion Diamond & Shield alongside each other on the lane
+  state.ammoSpawnTimer += dt;
+  if (state.ammoSpawnTimer >= 5.2) {
+    state.ammoSpawnTimer = 0;
+    if (pickups.filter(p => p.kind === 'ammo').length < 3) {
+      spawnAmmoPack(true);
+    }
+    if (pickups.filter(p => p.kind === 'fruit').length < 2) {
+      spawnFruit(false);
+    }
+  }
+
+  // 2) Spawn Credit Orbs / Diamonds (💎) alongside Food/Fruit on the lane
   state.diamondSpawnTimer += dt;
-  if (state.diamondSpawnTimer >= 8.5) {
+  if (state.diamondSpawnTimer >= 5.5) {
     state.diamondSpawnTimer = 0;
-    if (pickups.filter(p => p.kind === 'diamond').length < 2) {
+    if (pickups.filter(p => p.kind === 'diamond').length < 3) {
       spawnDiamondOrb();
     }
   }
 
-  // Spawn Special Accident-Prevention Shield Drops (🛡️) periodically on the lane
+  // 3) Spawn Special Accident-Prevention Shield Drops (🛡️) alongside Food & Diamonds on the lane
   state.shieldSpawnTimer += dt;
-  if (state.shieldSpawnTimer >= 16.0) {
+  if (state.shieldSpawnTimer >= 8.0) {
     state.shieldSpawnTimer = 0;
-    if (pickups.filter(p => p.kind === 'shield').length < 1 && state.aegisShields < 3) {
+    if (pickups.filter(p => p.kind === 'shield').length < 2 && state.aegisShields < 5) {
       spawnSpecialShieldDrop();
     }
   }
@@ -2959,9 +3183,11 @@ function animate() {
         sfx.playExplosion(); scene.remove(b); projectiles.splice(j, 1); scene.remove(en.mesh); enemies.splice(i, 1);
         if (state.gameStarted && !state.isDead) {
           state.enemiesKilled++;
-          // Defeated enemies have a 24% chance to drop a bonus Credit Diamond Orb on your lane
-          if (Math.random() < 0.24 && pickups.filter(p => p.kind === 'diamond').length < 3) {
+          // Defeated enemies drop bonus Credit Diamond Orbs or Shield Drops on your lane
+          if (Math.random() < 0.30 && pickups.filter(p => p.kind === 'diamond').length < 3) {
             spawnDiamondOrb(enemyDeathX);
+          } else if (Math.random() < 0.15 && pickups.filter(p => p.kind === 'shield').length < 2) {
+            spawnSpecialShieldDrop(enemyDeathX);
           }
           recalcScore();
           updateHUD();
@@ -3143,14 +3369,14 @@ if (window.visualViewport) {
 }
 
 window.onload = function () {
+  setDeviceMode(state.deviceMode, false);
   applyGraphicsDefinitionMode(state.graphicsMode, false);
   syncViewportDimensions();
   buildPlayerModel();
   setupCharacterCustomization();
   updateAvatarPreviewModel();
   rebuildBiomeScenery('Grass');
-  spawnAmmoPack();
-  spawnDiamondOrb();
+  spawnAllPickupsAlongside();
   recalcScore();
   updateHUD();
   syncNonOverlappingUiScale();
